@@ -171,9 +171,9 @@ export default function LoginPage() {
         <div className="bg-white rounded-3xl border border-[#D4AF37]/40 shadow-[0_20px_50px_rgba(140,115,75,0.12)] overflow-hidden animate-meplan-enter">
           <div className="px-6 pt-6 pb-5 bg-gradient-to-br from-[#FAF3E3] via-[#FFFDF9] to-[#F7ECDA] border-b border-[#D4AF37]/30">
             <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/85 border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/85 border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold tracking-wide">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>MEPlan Secure Portal</span>
+                <span>MEPlan</span>
               </div>
               <div className="w-9 h-9 rounded-xl bg-white p-1.5 shadow-2xs border border-[#D4AF37]/30">
                 <WeddingRingsIcon className="w-full h-full" />
@@ -446,7 +446,7 @@ export default function LoginPage() {
 
             <div className="pt-2 flex items-center justify-center gap-1.5 text-[11px] text-stone-500">
               <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-              <span>Dilindungi JWT HttpOnly Cookie &bull; Sliding Session 4 Jam</span>
+              <span>Sesi Anda aman dan terenkripsi</span>
             </div>
           </div>
         </div>

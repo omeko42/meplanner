@@ -77,6 +77,7 @@ import { toast } from 'sonner';
 import { PlannerAnalyticsCharts } from '@/components/charts/PlannerAnalyticsCharts';
 import { SessionRbacModal } from '@/components/admin/SessionRbacModal';
 import { SuperadminClientDirectory } from '@/components/admin/SuperadminClientDirectory';
+import { FilterPopover } from '@/components/ui/FilterPopover';
 import {
   exportBudgetToExcel,
   exportBudgetToPdf,
@@ -91,6 +92,7 @@ import {
   BudgetVendorItem,
   GuestWish,
   WeddingSettings,
+  WaTemplateItem,
   AdminUser,
   TaskCategory,
   TimelinePhase,
@@ -139,6 +141,7 @@ import {
   sanitizeWhatsAppText,
   DEFAULT_WA_TEMPLATE_VIP,
   DEFAULT_WA_TEMPLATE_REGULAR,
+  getEffectiveWaTemplates,
   exportTasksToCsv,
   exportTasksToExcelXls,
   exportTasksToWordDoc,
@@ -835,33 +838,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [waPreviewGuest, setWaPreviewGuest] = useState<WeddingGuest | null>(null);
   const [waModalMode, setWaModalMode] = useState<'preview' | 'global'>('preview');
   const [waCustomMessage, setWaCustomMessage] = useState<string | null>(null);
-  const [waGlobalTab, setWaGlobalTab] = useState<'vip' | 'regular'>('regular');
-  const [waTemplateVipDraft, setWaTemplateVipDraft] = useState<string>(
-    state.settings.waTemplateVip || DEFAULT_WA_TEMPLATE_VIP
+  const [waTemplatesDraft, setWaTemplatesDraft] = useState<WaTemplateItem[]>(() =>
+    getEffectiveWaTemplates(state.settings)
   );
-  const [waTemplateRegularDraft, setWaTemplateRegularDraft] = useState<string>(
-    state.settings.waTemplateRegular || DEFAULT_WA_TEMPLATE_REGULAR
+  const [activeWaTemplateId, setActiveWaTemplateId] = useState<string>(
+    () => getEffectiveWaTemplates(state.settings)[0]?.id || 'tpl_regular'
   );
+  const [waPreviewTemplateOverrideId, setWaPreviewTemplateOverrideId] = useState<
+    string | null
+  >(null);
   const [isWaGlobalModalOpen, setIsWaGlobalModalOpen] = useState(false);
 
-  // Keep draft editors synced whenever saved cloud settings change while modal is closed
+  // Keep draft template list synced whenever saved cloud settings change while modal is closed
   useEffect(() => {
     if (isWaGlobalModalOpen || waPreviewGuest) return;
-    setWaTemplateVipDraft(
-      state.settings.waTemplateVip?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
-        : DEFAULT_WA_TEMPLATE_VIP
-    );
-    setWaTemplateRegularDraft(
-      state.settings.waTemplateRegular?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
-        : DEFAULT_WA_TEMPLATE_REGULAR
-    );
+    const synced = getEffectiveWaTemplates(state.settings);
+    setWaTemplatesDraft(synced);
+    if (!synced.some((t) => t.id === activeWaTemplateId)) {
+      setActiveWaTemplateId(synced[0]?.id || 'tpl_regular');
+    }
   }, [
-    state.settings.waTemplateVip,
-    state.settings.waTemplateRegular,
+    state.settings,
     isWaGlobalModalOpen,
     waPreviewGuest,
+    activeWaTemplateId,
   ]);
   const [copiedGuestLinkId, setCopiedGuestLinkId] = useState<string | null>(null);
   const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
@@ -878,16 +878,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     const baseOrigin =
       typeof window !== 'undefined' && window.location?.origin
         ? window.location.origin
-        : 'https://meplanner.vercel.app';
+        : 'https://meplan.biz.id';
     const cleanUrl = `${baseOrigin}/${guestHashToken}`;
     return { guestHashToken, cleanUrl };
   };
 
   const getGuestPersonalWaData = (
     guest: WeddingGuest,
-    settingsObj: WeddingSettings = state.settings
+    settingsObj: WeddingSettings = state.settings,
+    overrideTemplateId?: string
   ) => {
-    const raw = generateWhatsAppMessage(guest, settingsObj);
+    const raw = generateWhatsAppMessage(
+      guest,
+      settingsObj,
+      undefined,
+      overrideTemplateId
+    );
     const { guestHashToken, cleanUrl } = getGuestPersonalUrl(guest, settingsObj);
     let messageText = sanitizeWhatsAppText(raw.messageText);
     if (raw.inviteUrl && raw.inviteUrl !== cleanUrl) {
@@ -907,68 +913,117 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const openGuestWaPreview = (guest: WeddingGuest) => {
+    const syncedTemplates = getEffectiveWaTemplates(state.settings);
     const gen = getGuestPersonalWaData(guest, state.settings);
     setWaPreviewGuest(guest);
-    // null = live-synced to Template Global (only becomes non-null when user edits Pesan Tamu directly)
     setWaCustomMessage(null);
-    setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
-    setWaTemplateVipDraft(
-      state.settings.waTemplateVip?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
-        : DEFAULT_WA_TEMPLATE_VIP
-    );
-    setWaTemplateRegularDraft(
-      state.settings.waTemplateRegular?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
-        : DEFAULT_WA_TEMPLATE_REGULAR
-    );
+    setWaPreviewTemplateOverrideId(null);
+    setWaTemplatesDraft(syncedTemplates);
+    setActiveWaTemplateId(gen.templateId || syncedTemplates[0]?.id || 'tpl_regular');
     setWaModalMode('preview');
     setIsWaGlobalModalOpen(true);
   };
 
   const openGlobalWaTemplateEditor = () => {
+    const syncedTemplates = getEffectiveWaTemplates(state.settings);
     const firstGuest = state.guests[0] || null;
     setWaPreviewGuest(firstGuest);
     setWaCustomMessage(null);
+    setWaPreviewTemplateOverrideId(null);
+    setWaTemplatesDraft(syncedTemplates);
     if (firstGuest) {
       const gen = getGuestPersonalWaData(firstGuest, state.settings);
-      setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
+      setActiveWaTemplateId(gen.templateId || syncedTemplates[0]?.id || 'tpl_regular');
+    } else {
+      setActiveWaTemplateId(syncedTemplates[0]?.id || 'tpl_regular');
     }
-    setWaTemplateVipDraft(
-      state.settings.waTemplateVip?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
-        : DEFAULT_WA_TEMPLATE_VIP
-    );
-    setWaTemplateRegularDraft(
-      state.settings.waTemplateRegular?.trim()
-        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
-        : DEFAULT_WA_TEMPLATE_REGULAR
-    );
     setWaModalMode('global');
     setIsWaGlobalModalOpen(true);
   };
 
-  const handleSaveGlobalWaTemplates = async (applyActiveToBoth = false) => {
-    const activeDraft =
-      waGlobalTab === 'vip' ? waTemplateVipDraft : waTemplateRegularDraft;
-    const cleanActive = sanitizeWhatsAppText(activeDraft).trim();
-    const nextVip = applyActiveToBoth
-      ? cleanActive || DEFAULT_WA_TEMPLATE_VIP
-      : sanitizeWhatsAppText(waTemplateVipDraft).trim() ||
-        DEFAULT_WA_TEMPLATE_VIP;
-    const nextRegular = applyActiveToBoth
-      ? cleanActive || DEFAULT_WA_TEMPLATE_REGULAR
-      : sanitizeWhatsAppText(waTemplateRegularDraft).trim() ||
-        DEFAULT_WA_TEMPLATE_REGULAR;
+  const handleUpdateActiveWaTemplate = (
+    updater: (tpl: WaTemplateItem) => WaTemplateItem
+  ) => {
+    setWaTemplatesDraft((prev) =>
+      prev.map((t) => (t.id === activeWaTemplateId ? updater(t) : t))
+    );
+  };
 
-    setWaTemplateVipDraft(nextVip);
-    setWaTemplateRegularDraft(nextRegular);
+  const handleAddCustomWaTemplate = () => {
+    const nextIdx = waTemplatesDraft.length + 1;
+    const newId = `tpl_custom_${Date.now().toString(36)}`;
+    const activeTpl = waTemplatesDraft.find((t) => t.id === activeWaTemplateId);
+    const created: WaTemplateItem = {
+      id: newId,
+      name: `Kategori Baru ${nextIdx}`,
+      matchGuestTypes: [],
+      matchPriorities: [],
+      isDefault: false,
+      content: activeTpl?.content || DEFAULT_WA_TEMPLATE_REGULAR,
+    };
+    setWaTemplatesDraft((prev) => [...prev, created]);
+    setActiveWaTemplateId(newId);
+    showToast('Template baru ditambahkan. Sesuaikan nama, aturan, dan isinya lalu simpan.');
+  };
+
+  const handleDeleteActiveWaTemplate = () => {
+    if (waTemplatesDraft.length <= 1) {
+      showToast('Minimal harus ada 1 template pesan aktif.');
+      return;
+    }
+    const target = waTemplatesDraft.find((t) => t.id === activeWaTemplateId);
+    const remaining = waTemplatesDraft.filter((t) => t.id !== activeWaTemplateId);
+    if (!remaining.some((t) => t.isDefault) && remaining[0]) {
+      remaining[0] = { ...remaining[0], isDefault: true };
+    }
+    setWaTemplatesDraft(remaining);
+    setActiveWaTemplateId(remaining[0]?.id || '');
+    if (waPreviewTemplateOverrideId === activeWaTemplateId) {
+      setWaPreviewTemplateOverrideId(null);
+    }
+    showToast(`Template "${target?.name || ''}" dihapus dari draft.`);
+  };
+
+  const handleSaveGlobalWaTemplates = async (applyActiveToAll = false) => {
+    const activeTpl =
+      waTemplatesDraft.find((t) => t.id === activeWaTemplateId) ||
+      waTemplatesDraft[0];
+    const cleanActiveContent = sanitizeWhatsAppText(
+      activeTpl?.content || DEFAULT_WA_TEMPLATE_REGULAR
+    ).trim();
+
+    const sanitizedList: WaTemplateItem[] = waTemplatesDraft.map((t, idx) => ({
+      ...t,
+      name: (t.name || '').trim() || `Template ${idx + 1}`,
+      content: applyActiveToAll
+        ? cleanActiveContent
+        : sanitizeWhatsAppText(t.content || '').trim() ||
+          DEFAULT_WA_TEMPLATE_REGULAR,
+    }));
+    if (!sanitizedList.some((t) => t.isDefault) && sanitizedList[0]) {
+      sanitizedList[0] = { ...sanitizedList[0], isDefault: true };
+    }
+
+    const vipTpl =
+      sanitizedList.find(
+        (t) =>
+          t.id === 'tpl_vip' ||
+          t.matchPriorities?.includes('P1 - VIP') ||
+          t.matchGuestTypes?.includes('Pejabat/VIP')
+      ) || sanitizedList[0];
+    const defaultTpl =
+      sanitizedList.find((t) => t.isDefault) ||
+      sanitizedList.find((t) => t.id === 'tpl_regular') ||
+      sanitizedList[0];
+
+    setWaTemplatesDraft(sanitizedList);
 
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
-      waTemplateVip: nextVip,
-      waTemplateRegular: nextRegular,
+      waTemplates: sanitizedList,
+      waTemplateVip: vipTpl?.content || DEFAULT_WA_TEMPLATE_VIP,
+      waTemplateRegular: defaultTpl?.content || DEFAULT_WA_TEMPLATE_REGULAR,
       updatedBy: adminUser.username,
     };
     await commitImmediateSettings(nextSettings);
@@ -977,11 +1032,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       module: 'WA_TEMPLATE',
       action: 'SIMPAN',
       status: 'SUCCESS',
-      summary: applyActiveToBoth
-        ? 'Menyimpan Template Global WhatsApp yang sama untuk VIP & Reguler'
-        : 'Menyimpan Template Global Pengantar WhatsApp (VIP & Reguler)',
+      summary: applyActiveToAll
+        ? `Menyamakan isi ${sanitizedList.length} template pesan WhatsApp`
+        : `Menyimpan ${sanitizedList.length} template pesan WhatsApp`,
     });
-    // Reset per-guest manual override so Pesan Tamu immediately reflects the newly saved Global Template
     setWaCustomMessage(null);
     if (waPreviewGuest) {
       setWaModalMode('preview');
@@ -989,9 +1043,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setIsWaGlobalModalOpen(false);
     }
     showToast(
-      applyActiveToBoth
-        ? '✓ Tersimpan! Template WA diterapkan ke SEMUA tamu (VIP & Reguler).'
-        : '✓ Tersimpan! Template Pengantar WhatsApp Global otomatis tersinkron ke Pesan Tamu.'
+      applyActiveToAll
+        ? 'Tersimpan! Isi pesan diterapkan ke seluruh kategori template.'
+        : 'Tersimpan! Template pesan WhatsApp otomatis tersinkron.'
     );
   };
 
@@ -5427,7 +5481,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     e.preventDefault();
     if (!isSuperadmin && !activePackageInfo.canManagePanitia) {
       showToast(
-        '🔒 Fitur Multi-Akses Tim Panitia (RBAC) tersedia mulai Paket Enterprise. Silakan upgrade paket Anda!'
+        'Fitur Akses Tim & Panitia tersedia mulai Paket Enterprise. Silakan upgrade paket Anda.'
       );
       setActiveTab('settings');
       setSettingsMenuTab('paket');
@@ -6533,15 +6587,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 type="button"
                 onClick={() => setIsSessionRbacModalOpen(true)}
                 className="hidden md:flex items-center gap-2 pl-2.5 pr-2 py-1 rounded-xl border border-stone-200/60 hover:border-[#D4AF37]/60 hover:bg-[#FAF3E3]/60 transition-all text-left cursor-pointer group shadow-2xs"
-                title="Buka Status Sesi, Enkripsi JWT & Otorisasi RBAC"
+                title="Lihat detail akun dan hak akses"
               >
                 <div className="relative shrink-0">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#C5A059] to-[#E5C178] text-white flex items-center justify-center font-extrabold text-xs shadow-2xs">
                     {adminUser.nama.charAt(0).toUpperCase()}
                   </div>
                   <span
-                    className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white animate-pulse"
-                    title="Sesi JWT Aktif (4 Jam)"
+                    className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white"
+                    title="Akun aktif"
                   />
                 </div>
                 <div className="leading-tight min-w-0">
@@ -6549,15 +6603,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <p className="text-xs font-bold text-stone-800 truncate max-w-[13rem] xl:max-w-[17rem]">
                       {adminUser.nama.replace(/\s*\(Superadmin\)/gi, '').trim()}
                     </p>
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   </div>
                   <p className={`text-[10px] ${activeManagerTheme.accentPillText} font-semibold truncate max-w-[13rem] xl:max-w-[17rem]`}>
                     {isPanitia
-                      ? 'Panitia (Non-Budgeting)'
+                      ? 'Panitia Acara'
                       : adminUser.role === 'SUPERADMIN' ||
                           /superadmin/i.test(adminUser.jabatan || '')
-                        ? 'Superadmin • Sesi JWT Aktif'
-                        : `${adminUser.jabatan} • Sesi Aktif`}
+                        ? 'Superadmin'
+                        : adminUser.jabatan || 'Pengelola Acara'}
                   </p>
                 </div>
               </button>
@@ -6579,7 +6632,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             {[
               {
                 id: 'readiness' as AdminModuleTab,
-                label: 'Tracker',
+                label: 'Ringkasan',
                 title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
                 icon: LayoutDashboard,
                 badge: `${metrics.readinessPercent}%`,
@@ -6595,17 +6648,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 ? [
                     {
                       id: 'budget' as AdminModuleTab,
-                      label: 'Moneter',
+                      label: 'Anggaran',
                       title: 'Manajemen Anggaran, Vendor & Pembayaran',
                       icon: Wallet,
-                      badge: `${state.budgetItems.length} Item`,
+                      badge: `${state.budgetItems.length} Pos`,
                     },
                   ]
                 : []),
               {
                 id: 'guests' as AdminModuleTab,
                 label: 'Tamu',
-                title: 'Buku Tamu, Kirim Undangan WhatsApp & Konfirmasi RSVP',
+                title: 'Daftar Tamu, Undangan WhatsApp & Konfirmasi Kehadiran',
                 icon: Users,
                 badge: `${metrics.totalGuests} (${metrics.totalPaxQuota} Pax)`,
               },
@@ -6613,7 +6666,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                 id: 'settings' as AdminModuleTab,
                 key: 'settings',
                 label: 'Pengaturan',
-                title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Akun',
+                title: 'Pengaturan Konten Undangan, Tema, Jadwal, dan Akun',
                 icon: Settings,
                 isActive:
                   activeTab === 'settings' && settingsMenuTab !== 'database',
@@ -6627,9 +6680,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               {
                 id: 'settings' as AdminModuleTab,
                 key: 'data_cloud',
-                label: 'Data & Cloud',
-                title:
-                  'Status Sinkronisasi Supabase Cloud, Backup/Restore JSON, Spreadsheet & Log Audit',
+                label: 'Sinkronisasi',
+                title: 'Status penyimpanan data, cadangan, dan riwayat aktivitas',
                 icon: FileSpreadsheet,
                 statusDot:
                   errorAuditCount > 0
@@ -6640,10 +6692,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     : 'ok',
                 badge:
                   errorAuditCount > 0
-                    ? `${errorAuditCount} Error`
+                    ? 'Perlu Cek'
                     : cloudSyncStatus === 'SYNCING'
-                    ? 'Sync...'
-                    : `OK • ${auditLogs.length}`,
+                    ? 'Menyimpan...'
+                    : 'Tersimpan',
                 isActive:
                   activeTab === 'settings' && settingsMenuTab === 'database',
                 onSelect: () => {
@@ -7447,88 +7499,91 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
            ===================================================================== */}
         {activeTab === 'checklist' && (
           <div className="space-y-4">
-            {/* Phase Timeline Pills & Filters */}
-            <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-stone-200 space-y-3">
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPhase('ALL')}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
-                    selectedPhase === 'ALL'
-                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
-                      : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
-                  }`}
-                >
-                  Semua Fase ({state.tasks.length})
-                </button>
-                {TIMELINE_PHASES.map((phase) => {
-                  const count = state.tasks.filter((t) => t.timelinePhase === phase).length;
-                  return (
-                    <button
-                      key={phase}
-                      type="button"
-                      onClick={() => setSelectedPhase(phase)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
-                        selectedPhase === phase
-                          ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white border-[#B68D40] shadow-2xs'
-                          : 'bg-white text-stone-700 border-stone-300 hover:bg-[#FAF3E3] hover:text-[#8B6914]'
-                      }`}
-                    >
-                      {phase} ({count})
-                    </button>
-                  );
-                })}
+            {/* Clean Search + Cascading Filter Popover */}
+            <div className="bg-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-stone-200 flex flex-wrap items-center gap-2.5">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={taskSearch}
+                  onChange={(e) => setTaskSearch(e.target.value)}
+                  placeholder="Cari tugas atau catatan persiapan..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] focus:bg-white focus:border-[#C5A059] focus:outline-none text-xs"
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={taskSearch}
-                    onChange={(e) => setTaskSearch(e.target.value)}
-                    placeholder="Cari tugas, dokumen, SKCK..."
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5]"
-                  />
-                </div>
-
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value as TaskCategory | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
-                >
-                  <option value="ALL">Semua Kategori</option>
-                  {TASK_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as TaskStatus | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
-                >
-                  <option value="ALL">Semua Status</option>
-                  <option value="BELUM">Belum</option>
-                  <option value="PROSES">Proses</option>
-                  <option value="SELESAI">Selesai</option>
-                </select>
-
-                <select
-                  value={selectedOwner}
-                  onChange={(e) => setSelectedOwner(e.target.value as TaskOwner | 'ALL')}
-                  className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
-                >
-                  <option value="ALL">Semua PIC</option>
-                  <option value="Saya">Saya</option>
-                  <option value="Calon">Calon</option>
-                  <option value="Bersama">Bersama</option>
-                  <option value="Keluarga">Keluarga</option>
-                  <option value="WO / Panitia">WO / Panitia</option>
-                </select>
-              </div>
+              <FilterPopover
+                groups={[
+                  {
+                    id: 'phase',
+                    label: 'Fase Waktu',
+                    value: selectedPhase,
+                    onChange: (v) => setSelectedPhase(v as TimelinePhase | 'ALL'),
+                    options: [
+                      { value: 'ALL', label: 'Semua Fase', count: state.tasks.length },
+                      ...TIMELINE_PHASES.map((phase) => ({
+                        value: phase,
+                        label: phase,
+                        count: state.tasks.filter((t) => t.timelinePhase === phase).length,
+                      })),
+                    ],
+                  },
+                  {
+                    id: 'category',
+                    label: 'Kategori',
+                    value: selectedCategory,
+                    onChange: (v) => setSelectedCategory(v as TaskCategory | 'ALL'),
+                    options: [
+                      { value: 'ALL', label: 'Semua Kategori', count: state.tasks.length },
+                      ...TASK_CATEGORIES.map((c) => ({
+                        value: c,
+                        label: c,
+                        count: state.tasks.filter((t) => t.category === c).length,
+                      })),
+                    ],
+                  },
+                  {
+                    id: 'status',
+                    label: 'Status',
+                    value: selectedStatus,
+                    onChange: (v) => setSelectedStatus(v as TaskStatus | 'ALL'),
+                    options: [
+                      { value: 'ALL', label: 'Semua Status', count: state.tasks.length },
+                      {
+                        value: 'BELUM',
+                        label: 'Belum Dikerjakan',
+                        count: state.tasks.filter((t) => !t.done && t.status === 'BELUM').length,
+                      },
+                      {
+                        value: 'PROSES',
+                        label: 'Sedang Berjalan',
+                        count: state.tasks.filter((t) => !t.done && t.status === 'PROSES').length,
+                      },
+                      {
+                        value: 'SELESAI',
+                        label: 'Selesai',
+                        count: state.tasks.filter((t) => t.done || t.status === 'SELESAI').length,
+                      },
+                    ],
+                  },
+                  {
+                    id: 'owner',
+                    label: 'Penanggung Jawab',
+                    value: selectedOwner,
+                    onChange: (v) => setSelectedOwner(v as TaskOwner | 'ALL'),
+                    options: [
+                      { value: 'ALL', label: 'Semua', count: state.tasks.length },
+                      ...(['Saya', 'Calon', 'Bersama', 'Keluarga', 'WO / Panitia'] as TaskOwner[]).map(
+                        (owner) => ({
+                          value: owner,
+                          label: owner,
+                          count: state.tasks.filter((t) => t.owner === owner).length,
+                        })
+                      ),
+                    ],
+                  },
+                ]}
+              />
             </div>
 
             {/* LinkedIn-Style Checklist Section Card */}
@@ -7759,7 +7814,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   Paket Aktif: {activePackageInfo.packageName}
                 </span>
                 <h3 className="text-lg sm:text-xl font-extrabold text-stone-900">
-                  Modul Anggaran Moneter &amp; Vendor Tracker
+                  Pengelolaan Anggaran &amp; Vendor
                 </h3>
                 <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-lg mx-auto">
                   Kelola Target Pagu, perbandingan Estimasi vs Realisasi, status DP/Lunas tiap vendor, serta ekspor laporan keuangan PDF &amp; Excel (.xlsx) mulai dari <strong>Paket Business (Rp 74.250 • Aktif Selamanya)</strong>.
@@ -7860,10 +7915,35 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
               {/* Header with Export Excel / Word / PDF + and Edit icons on top-right */}
               <div className="px-4 sm:px-6 py-3.5 border-b border-stone-100 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
-                  <span>Pos Moneter ({filteredBudgetItems.length})</span>
-                  <InfoTooltip text="Klik Excel, Word, atau PDF untuk mengunduh laporan keuangan rapi, tombol + untuk menambah pos baru, atau ikon pensil untuk merevisi biaya." />
-                </h2>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h2 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
+                    <span>Rincian Anggaran ({filteredBudgetItems.length})</span>
+                  </h2>
+                  <FilterPopover
+                    groups={[
+                      {
+                        id: 'budget_category',
+                        label: 'Kategori Biaya',
+                        value: budgetCategoryFilter,
+                        onChange: (v) =>
+                          setBudgetCategoryFilter(v as VendorCategory | 'ALL'),
+                        options: [
+                          {
+                            value: 'ALL',
+                            label: 'Semua Kategori',
+                            count: state.budgetItems.length,
+                          },
+                          ...VENDOR_CATEGORIES.map((cat) => ({
+                            value: cat,
+                            label: cat,
+                            count: state.budgetItems.filter((b) => b.category === cat)
+                              .length,
+                          })),
+                        ],
+                      },
+                    ]}
+                  />
+                </div>
                 <div className="flex items-center gap-1.5 flex-wrap shrink-0">
                   {filteredBudgetItems.length > 0 && (
                     <>
@@ -8221,7 +8301,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onClick={() => {
                       if (!isSuperadmin && !activePackageInfo.canUseGuestReception) {
                         showToast(
-                          '🔒 Layar Penerima Tamu (Guest Reception Hari-H) tersedia mulai Paket Premium. Silakan upgrade paket Anda!'
+                          'Buku Tamu Hari-H tersedia mulai Paket Premium. Silakan upgrade paket Anda.'
                         );
                         setActiveTab('settings');
                         setSettingsMenuTab('paket');
@@ -8231,12 +8311,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setReceptionSearchInput('');
                       setIsGuestReceptionModalOpen(true);
                     }}
-                    title="Buka Layar Penerima Tamu (Guest Reception Check-In Hari-H)"
-                    className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
+                    title="Buka Layar Buku Tamu & Check-In Hari-H"
+                    className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-bold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
                   >
                     {!isSuperadmin && !activePackageInfo.canUseGuestReception
-                      ? '🔒 Layar Penerima Tamu (Premium)'
-                      : '🖥️ Layar Penerima Tamu (Hari-H)'}
+                      ? 'Buku Tamu Hari-H (Premium)'
+                      : 'Buku Tamu Hari-H'}
                   </button>
                   {state.guests.length > 0 && (
                     <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5">
@@ -8284,113 +8364,149 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   )}
                 </div>
 
-                {/* Penanda Cetak Undangan Filter Pills: Cetak Tebal | Cetak Biasa | Online */}
-                {guestSubTab === 'list' && (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {[
-                      {
-                        key: 'ALL' as const,
-                        label: `Semua (${state.guests.length})`,
-                      },
-                      {
-                        key: 'Cetak Tebal' as const,
-                        label: `Cetak Tebal (${guestFormatCounts.cetakTebal})`,
-                      },
-                      {
-                        key: 'Cetak Biasa' as const,
-                        label: `Cetak Biasa (${guestFormatCounts.cetakBiasa})`,
-                      },
-                      {
-                        key: 'Online' as const,
-                        label: `Online (${guestFormatCounts.online})`,
-                      },
-                    ].map((pill) => {
-                      const active = guestFormatFilter === pill.key;
-                      return (
-                        <button
-                          key={pill.key}
-                          type="button"
-                          onClick={() => setGuestFormatFilter(pill.key)}
-                          className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all ${
-                            active
-                              ? 'bg-[#FAF3E3] text-[#8B6914] border-[#B68D40] shadow-2xs'
-                              : 'bg-[#FAF8F5] text-stone-600 border-stone-200 hover:border-[#D4AF37]/50 hover:text-[#8B6914]'
-                          }`}
-                        >
-                          {pill.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
 
               {guestSubTab === 'list' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
-                  <div className="relative">
+                <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                  <div className="relative flex-1 min-w-[210px]">
                     <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       value={guestSearch}
                       onChange={(e) => setGuestSearch(e.target.value)}
-                      placeholder="Cari nama tamu, instansi, kode..."
-                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5]"
+                      placeholder="Cari nama tamu, instansi, atau kode..."
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] focus:bg-white focus:border-[#C5A059] focus:outline-none"
                     />
                   </div>
 
-                  <select
-                    value={guestTypeFilter}
-                    onChange={(e) => setGuestTypeFilter(e.target.value as GuestType | 'ALL')}
-                    className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
-                  >
-                    <option value="ALL">Semua Kategori</option>
-                    <option value="Pejabat/VIP">Pejabat / VIP</option>
-                    <option value="Keluarga">Keluarga</option>
-                    <option value="Rekan Kerja/Polri">Rekan Kerja / Polri</option>
-                    <option value="Teman/Sahabat">Teman / Sahabat</option>
-                    <option value="Tetangga/Gereja">Tetangga / Gereja</option>
-                  </select>
-
-                  <select
-                    value={guestPriorityFilter}
-                    onChange={(e) =>
-                      setGuestPriorityFilter(e.target.value as GuestPriority | 'ALL')
-                    }
-                    className="px-3 py-2 rounded-xl border border-stone-300 bg-[#FAF8F5] font-semibold"
-                  >
-                    <option value="ALL">Semua Prioritas</option>
-                    <option value="P1 - VIP">P1 - VIP</option>
-                    <option value="P2 - Utama">P2 - Utama</option>
-                    <option value="P3 - Reguler">P3 - Reguler</option>
-                  </select>
-
-                  <select
-                    value={guestRsvpFilter}
-                    onChange={(e) =>
-                      setGuestRsvpFilter(
-                        e.target.value as RsvpStatus | 'ALL' | 'HADIR_QR' | 'HADIR_RSVP'
-                      )
-                    }
-                    className={`px-3 py-2 rounded-xl border font-semibold ${
-                      guestRsvpFilter === 'Hadir' ||
-                      guestRsvpFilter === 'HADIR_QR' ||
-                      guestRsvpFilter === 'HADIR_RSVP'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-400 font-extrabold'
-                        : 'bg-[#FAF8F5] text-stone-800 border-stone-300'
-                    }`}
-                  >
-                    <option value="ALL">Semua Kehadiran / RSVP</option>
-                    <option value="Hadir">
-                      ✓ Semua Hadir ({metrics.hadirGuestsCount})
-                    </option>
-                    <option value="HADIR_QR">
-                      📲 Hadir • Tag Scan QR ({checkedInMetrics.count})
-                    </option>
-                    <option value="HADIR_RSVP">📝 Hadir • Form RSVP</option>
-                    <option value="Belum Konfirmasi">Belum Konfirmasi</option>
-                    <option value="Masih Ragu">Masih Ragu</option>
-                    <option value="Tidak Hadir">Tidak Hadir</option>
-                  </select>
+                  <FilterPopover
+                    groups={[
+                      {
+                        id: 'format',
+                        label: 'Format Undangan',
+                        value: guestFormatFilter,
+                        onChange: (v) =>
+                          setGuestFormatFilter(
+                            v as 'ALL' | 'Cetak Tebal' | 'Cetak Biasa' | 'Online'
+                          ),
+                        options: [
+                          { value: 'ALL', label: 'Semua Format', count: state.guests.length },
+                          {
+                            value: 'Cetak Tebal',
+                            label: 'Cetak Tebal',
+                            count: guestFormatCounts.cetakTebal,
+                          },
+                          {
+                            value: 'Cetak Biasa',
+                            label: 'Cetak Biasa',
+                            count: guestFormatCounts.cetakBiasa,
+                          },
+                          {
+                            value: 'Online',
+                            label: 'Online',
+                            count: guestFormatCounts.online,
+                          },
+                        ],
+                      },
+                      {
+                        id: 'rsvp',
+                        label: 'Kehadiran',
+                        value: guestRsvpFilter,
+                        onChange: (v) =>
+                          setGuestRsvpFilter(
+                            v as RsvpStatus | 'ALL' | 'HADIR_QR' | 'HADIR_RSVP'
+                          ),
+                        options: [
+                          { value: 'ALL', label: 'Semua Status', count: state.guests.length },
+                          {
+                            value: 'Hadir',
+                            label: 'Hadir',
+                            count: metrics.hadirGuestsCount,
+                            children: [
+                              {
+                                value: 'Hadir',
+                                label: 'Semua yang Hadir',
+                                count: metrics.hadirGuestsCount,
+                              },
+                              {
+                                value: 'HADIR_QR',
+                                label: 'Hadir via Scan QR',
+                                count: checkedInMetrics.count,
+                              },
+                              {
+                                value: 'HADIR_RSVP',
+                                label: 'Hadir via Form RSVP',
+                                count: Math.max(
+                                  0,
+                                  metrics.hadirGuestsCount - checkedInMetrics.count
+                                ),
+                              },
+                            ],
+                          },
+                          {
+                            value: 'Belum Konfirmasi',
+                            label: 'Belum Konfirmasi',
+                            count: state.guests.filter(
+                              (g) =>
+                                g.rsvpStatus === 'Belum Konfirmasi' &&
+                                g.attendanceStatus !== 'Hadir di Lokasi'
+                            ).length,
+                          },
+                          {
+                            value: 'Masih Ragu',
+                            label: 'Masih Ragu',
+                            count: state.guests.filter((g) => g.rsvpStatus === 'Masih Ragu')
+                              .length,
+                          },
+                          {
+                            value: 'Tidak Hadir',
+                            label: 'Tidak Hadir',
+                            count: state.guests.filter((g) => g.rsvpStatus === 'Tidak Hadir')
+                              .length,
+                          },
+                        ],
+                      },
+                      {
+                        id: 'guestType',
+                        label: 'Kategori Tamu',
+                        value: guestTypeFilter,
+                        onChange: (v) => setGuestTypeFilter(v as GuestType | 'ALL'),
+                        options: [
+                          { value: 'ALL', label: 'Semua Kategori', count: state.guests.length },
+                          ...(
+                            [
+                              'Pejabat/VIP',
+                              'Keluarga',
+                              'Rekan Kerja/Polri',
+                              'Teman/Sahabat',
+                              'Tetangga/Gereja',
+                            ] as GuestType[]
+                          ).map((gt) => ({
+                            value: gt,
+                            label: gt,
+                            count: state.guests.filter((g) => g.guestType === gt).length,
+                          })),
+                        ],
+                      },
+                      {
+                        id: 'priority',
+                        label: 'Prioritas',
+                        value: guestPriorityFilter,
+                        onChange: (v) =>
+                          setGuestPriorityFilter(v as GuestPriority | 'ALL'),
+                        options: [
+                          { value: 'ALL', label: 'Semua Prioritas', count: state.guests.length },
+                          ...(
+                            ['P1 - VIP', 'P2 - Utama', 'P3 - Reguler'] as GuestPriority[]
+                          ).map((pr) => ({
+                            value: pr,
+                            label: pr,
+                            count: state.guests.filter((g) => g.priority === pr).length,
+                          })),
+                        ],
+                      },
+                    ]}
+                  />
                 </div>
               )}
             </div>
@@ -14635,31 +14751,67 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       {expandedBgCardKey === 'catalog_themes' && (
                         <div className="space-y-3 pt-2 border-t border-[#D4AF37]/25">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {(
-                              [
-                                { id: 'ALL', label: `Semua (${MEPLANNER_THEME_PRESETS.length})` },
-                                { id: 'WEDDING', label: '💍 Pernikahan' },
-                                { id: 'BIRTHDAY', label: '🎂 Ulang Tahun' },
-                                { id: 'GRADUATION', label: '🎓 Wisuda' },
-                                { id: 'MEETING', label: '🏛️ Rapat' },
-                                { id: 'GALA_DINNER', label: '🥂 Gala Dinner' },
-                              ] as const
-                            ).map((cat) => (
-                              <button
-                                key={cat.id}
-                                type="button"
-                                onClick={() => setThemeCategoryFilter(cat.id)}
-                                className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
-                                  themeCategoryFilter === cat.id
-                                    ? 'bg-stone-900 text-[#FAF3E3] border-stone-900'
-                                    : 'bg-white text-stone-700 border-stone-200 hover:border-[#D4AF37]'
-                                }`}
-                              >
-                                {cat.label}
-                              </button>
-                            ))}
-                          </div>
+                          <FilterPopover
+                            groups={[
+                              {
+                                id: 'theme_event_type',
+                                label: 'Jenis Acara',
+                                value: themeCategoryFilter,
+                                onChange: (v) =>
+                                  setThemeCategoryFilter(
+                                    v as
+                                      | 'ALL'
+                                      | 'WEDDING'
+                                      | 'BIRTHDAY'
+                                      | 'GRADUATION'
+                                      | 'MEETING'
+                                      | 'GALA_DINNER'
+                                  ),
+                                options: [
+                                  {
+                                    value: 'ALL',
+                                    label: 'Semua Tema',
+                                    count: MEPLANNER_THEME_PRESETS.length,
+                                  },
+                                  {
+                                    value: 'WEDDING',
+                                    label: 'Pernikahan',
+                                    count: MEPLANNER_THEME_PRESETS.filter(
+                                      (t) => t.eventType === 'WEDDING'
+                                    ).length,
+                                  },
+                                  {
+                                    value: 'BIRTHDAY',
+                                    label: 'Ulang Tahun',
+                                    count: MEPLANNER_THEME_PRESETS.filter(
+                                      (t) => t.eventType === 'BIRTHDAY'
+                                    ).length,
+                                  },
+                                  {
+                                    value: 'GRADUATION',
+                                    label: 'Wisuda',
+                                    count: MEPLANNER_THEME_PRESETS.filter(
+                                      (t) => t.eventType === 'GRADUATION'
+                                    ).length,
+                                  },
+                                  {
+                                    value: 'MEETING',
+                                    label: 'Rapat Resmi',
+                                    count: MEPLANNER_THEME_PRESETS.filter(
+                                      (t) => t.eventType === 'MEETING'
+                                    ).length,
+                                  },
+                                  {
+                                    value: 'GALA_DINNER',
+                                    label: 'Gala Dinner',
+                                    count: MEPLANNER_THEME_PRESETS.filter(
+                                      (t) => t.eventType === 'GALA_DINNER'
+                                    ).length,
+                                  },
+                                ],
+                              },
+                            ]}
+                          />
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                             {MEPLANNER_THEME_PRESETS.filter(
@@ -16944,8 +17096,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           features: [
                             '2 Undangan Premium (Aktif Selamanya)',
                             'Unlimited Tamu & Multi-Acara',
-                            'Full Event Planner (Tracker, Checklist & Budget Moneter)',
-                            'Layar Penerima Tamu VIP & Ekspor Excel (.xlsx), Word & PDF',
+                            'Perencanaan Lengkap (Ringkasan, Checklist & Anggaran)',
+                            'Buku Tamu Hari-H & Ekspor Excel (.xlsx), Word & PDF',
                           ],
                           popular: false,
                         },
@@ -16960,7 +17112,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             '5 Undangan Premium (Aktif Selamanya)',
                             'Unlimited Tamu & Tim Panitia Kolaboratif',
                             'Global Cashless + Crypto USDT / PayPal / QRIS',
-                            'Forensic Audit Log & Cloud Backup Terpadu',
+                            'Riwayat Aktivitas & Pencadangan Otomatis',
                           ],
                           popular: false,
                         },
@@ -22731,25 +22883,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           {(() => {
             const targetGuest = waPreviewGuest || state.guests[0];
-            // Overlay live Template Global drafts so switching tabs between Template Global <-> Pesan Tamu ALWAYS stays 100% in sync!
+            const savedTemplates = getEffectiveWaTemplates(state.settings);
             const livePreviewSettings: WeddingSettings = {
               ...state.settings,
-              waTemplateVip: waTemplateVipDraft.trim() || state.settings.waTemplateVip,
-              waTemplateRegular:
-                waTemplateRegularDraft.trim() || state.settings.waTemplateRegular,
+              waTemplates: waTemplatesDraft,
             };
             const generated = targetGuest
-              ? getGuestPersonalWaData(targetGuest, livePreviewSettings)
+              ? getGuestPersonalWaData(
+                  targetGuest,
+                  livePreviewSettings,
+                  waPreviewTemplateOverrideId || undefined
+                )
               : null;
-            const savedVip =
-              state.settings.waTemplateVip?.trim() || DEFAULT_WA_TEMPLATE_VIP;
-            const savedReg =
-              state.settings.waTemplateRegular?.trim() || DEFAULT_WA_TEMPLATE_REGULAR;
+            const activeTemplateObj =
+              waTemplatesDraft.find((t) => t.id === activeWaTemplateId) ||
+              waTemplatesDraft[0];
             const hasUnsavedGlobalDraft =
-              sanitizeWhatsAppText(waTemplateVipDraft).trim() !==
-                sanitizeWhatsAppText(savedVip).trim() ||
-              sanitizeWhatsAppText(waTemplateRegularDraft).trim() !==
-                sanitizeWhatsAppText(savedReg).trim();
+              JSON.stringify(waTemplatesDraft) !== JSON.stringify(savedTemplates);
             const effectiveMessage =
               waCustomMessage !== null
                 ? waCustomMessage
@@ -22759,27 +22909,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               : '#';
 
             return (
-              <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl border border-[#D4AF37]/40 overflow-hidden text-xs sm:text-sm pb-safe">
+              <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl border border-stone-200 overflow-hidden text-xs sm:text-sm pb-safe">
                 {/* Header */}
-                <div className="px-5 sm:px-6 py-4 border-b border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-base sm:text-lg font-bold text-stone-900 flex items-center">
-                      <span>
-                        {waModalMode === 'global'
-                          ? 'Format Teks WhatsApp'
-                          : 'Kirim Undangan WA'}
-                      </span>
-                      <InfoTooltip
-                        text={
-                          waModalMode === 'global'
-                            ? 'Ubah format pesan default sekali untuk otomatis diterapkan ke seluruh tamu.'
-                            : 'Tinjau atau edit pesan pengantar sebelum dikirim ke WhatsApp tamu.'
-                        }
-                      />
+                <div className="px-5 sm:px-6 py-4 border-b border-stone-200/80 bg-[#FAF8F5] flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="text-base sm:text-lg font-bold text-stone-900">
+                      {waModalMode === 'global'
+                        ? 'Atur Template Pesan WA'
+                        : 'Kirim Undangan WhatsApp'}
                     </h3>
                     <p className="text-xs text-stone-500 truncate">
                       {waModalMode === 'global'
-                        ? 'Template Global VIP & Reguler'
+                        ? `${waTemplatesDraft.length} template tersedia — bebas tambah sesuai kategori tamu`
                         : targetGuest?.guestName || 'Tamu Undangan'}
                     </p>
                   </div>
@@ -22789,14 +22930,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setIsWaGlobalModalOpen(false);
                       setWaPreviewGuest(null);
                       setWaCustomMessage(null);
+                      setWaPreviewTemplateOverrideId(null);
                     }}
-                    className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 shrink-0"
+                    className="w-9 h-9 rounded-full hover:bg-stone-200/60 flex items-center justify-center text-stone-600 shrink-0 cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Mode Switcher Tabs: Pesan Tamu Ini vs Teks Default Global */}
+                {/* Mode Switcher Tabs: Pesan Tamu vs Atur Template */}
                 <div className="px-5 sm:px-6 pt-3 bg-white border-b border-stone-100 flex items-center gap-2">
                   {targetGuest && (
                     <button
@@ -22817,8 +22959,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (generated) {
-                        setWaGlobalTab(generated.isVipPolri ? 'vip' : 'regular');
+                      if (generated?.templateId) {
+                        setActiveWaTemplateId(generated.templateId);
                       }
                       setWaModalMode('global');
                     }}
@@ -22829,9 +22971,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     }`}
                   >
                     <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
-                    <span>Template Global</span>
+                    <span>Atur Template ({waTemplatesDraft.length})</span>
                     {hasUnsavedGlobalDraft && (
-                      <span className="w-2 h-2 rounded-full bg-amber-500" title="Ada perubahan template belum disimpan" />
+                      <span
+                        className="w-2 h-2 rounded-full bg-amber-500"
+                        title="Ada perubahan template belum disimpan"
+                      />
                     )}
                   </button>
                 </div>
@@ -22842,7 +22987,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       {hasUnsavedGlobalDraft && (
                         <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300/80 flex items-center justify-between gap-2 text-[11px] text-amber-900">
                           <span className="font-semibold">
-                            Draft Template Global aktif di pratinjau ini, belum disimpan ke database.
+                            Perubahan template sedang dipratinjau dan belum disimpan permanen.
                           </span>
                           <button
                             type="button"
@@ -22853,10 +22998,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                           </button>
                         </div>
                       )}
-                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 flex items-center justify-between gap-2">
+
+                      <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-stone-200/80 flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-[11px] font-bold text-stone-700">
-                            Link Undangan:
+                          <p className="text-[11px] font-semibold text-stone-500">
+                            Tautan Undangan
                           </p>
                           <p className="font-mono text-xs text-[#8B6914] font-semibold break-all">
                             {generated.inviteUrl}
@@ -22871,49 +23017,51 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               targetGuest,
                               `Menyalin link undangan dari modal WA untuk ${targetGuest.guestName}`
                             );
-                            showToast('Link undangan berhasil disalin!');
+                            showToast('Tautan undangan disalin.');
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 shrink-0"
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs border border-[#D4AF37]/40 shrink-0 cursor-pointer"
                         >
-                          Salin Link
+                          Salin
                         </button>
                       </div>
 
                       <div>
-                        <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <label className="block font-bold text-stone-700">
-                              Pesan Pengantar WA
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <label className="font-bold text-stone-800">
+                              Template Aktif
                             </label>
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                                generated.isVipPolri
-                                  ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              }`}
+                            <select
+                              value={generated.templateId}
+                              onChange={(e) => {
+                                setWaPreviewTemplateOverrideId(e.target.value);
+                                setWaCustomMessage(null);
+                              }}
+                              className="px-2.5 py-1 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800 focus:border-[#B68D40] focus:outline-none cursor-pointer"
                             >
-                              {generated.isVipPolri
-                                ? '⭐ Template VIP (P1)'
-                                : '✉️ Template Umum / Reguler'}
-                            </span>
+                              {waTemplatesDraft.map((tpl) => (
+                                <option key={tpl.id} value={tpl.id}>
+                                  {tpl.name}
+                                  {tpl.isDefault ? ' (Bawaan)' : ''}
+                                </option>
+                              ))}
+                            </select>
                             {waCustomMessage !== null && (
-                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 text-[10px] font-bold">
-                                Diedit Khusus Tamu Ini
+                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 text-[10px] font-semibold">
+                                Diedit manual
                               </span>
                             )}
                           </div>
                           <button
                             type="button"
                             onClick={() => {
-                              setWaGlobalTab(generated.isVipPolri ? 'vip' : 'regular');
+                              setActiveWaTemplateId(generated.templateId);
                               setWaModalMode('global');
                             }}
                             className="inline-flex items-center gap-1 text-xs font-bold text-[#8B6914] hover:underline cursor-pointer"
                           >
                             <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
-                            <span>
-                              Edit Template {generated.isVipPolri ? 'VIP' : 'Reguler'} &rarr;
-                            </span>
+                            <span>Edit Template &rarr;</span>
                           </button>
                         </div>
                         <textarea
@@ -22925,16 +23073,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
+                    <div className="px-5 sm:px-6 py-3.5 border-t border-stone-200/80 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => {
                           setWaCustomMessage(null);
-                          showToast('✓ Pesan tamu disinkronkan ulang dengan Template Global.');
+                          setWaPreviewTemplateOverrideId(null);
+                          showToast('Pesan disinkronkan ulang dengan template.');
                         }}
                         className="text-xs font-semibold text-stone-500 hover:text-stone-800 cursor-pointer"
                       >
-                        Sinkronkan ke Template Global
+                        Reset ke Template
                       </button>
                       <div className="flex items-center gap-2">
                         <button
@@ -22946,9 +23095,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                               targetGuest,
                               `Menyalin teks pengantar & link WA untuk ${targetGuest.guestName}`
                             );
-                            showToast('Seluruh teks undangan WA berhasil disalin!');
+                            showToast('Teks undangan WhatsApp disalin.');
                           }}
-                          className="px-4 py-2 rounded-full border border-[#D4AF37]/45 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs flex items-center gap-1.5"
+                          className="px-4 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs flex items-center gap-1.5 cursor-pointer"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           Salin Teks
@@ -22980,129 +23129,254 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     </div>
                   </>
                 ) : (
-                  /* TAB 2: EDITOR TEMPLATE DEFAULT GLOBAL (VIP & UMUM) */
+                  /* TAB 2: MULTI-CATEGORY FLEXIBLE TEMPLATE MANAGER */
                   <>
                     <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
-                      {/* Pilihan Kategori Template: VIP vs Umum */}
-                      <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#FAF8F5] border border-stone-200">
-                        <button
-                          type="button"
-                          onClick={() => setWaGlobalTab('vip')}
-                          className={`py-2 px-3 rounded-lg font-bold text-xs truncate transition-all ${
-                            waGlobalTab === 'vip'
-                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
-                              : 'text-stone-600 hover:text-[#8B6914]'
-                          }`}
+                      {/* Template Switcher + Add New + Delete */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={activeTemplateObj?.id || ''}
+                          onChange={(e) => setActiveWaTemplateId(e.target.value)}
+                          className="flex-1 min-w-[180px] px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-bold text-stone-900 focus:border-[#B68D40] focus:outline-none cursor-pointer"
                         >
-                          ⭐ VIP / Pejabat (P1)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setWaGlobalTab('regular')}
-                          className={`py-2 px-3 rounded-lg font-bold text-xs truncate transition-all ${
-                            waGlobalTab === 'regular'
-                              ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
-                              : 'text-stone-600 hover:text-[#8B6914]'
-                          }`}
-                        >
-                          ✉️ Umum / Reguler
-                        </button>
-                      </div>
-
-                      {/* Variabel Otomatis (Klik untuk menyisipkan) */}
-                      <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-1.5">
-                        <div className="flex items-center gap-1">
-                          <p className="text-[11px] font-bold text-stone-700">
-                            Variabel Otomatis
-                          </p>
-                          <InfoTooltip text="Klik tag variabel di bawah untuk menyisipkan data otomatis (nama tamu, link, jadwal, lokasi) ke dalam template pesan." />
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {[
-                            { tag: '{nama_tamu}', label: 'Nama Tamu' },
-                            { tag: '{instansi}', label: 'Jabatan/Instansi' },
-                            { tag: '{link_undangan}', label: 'Link Undangan Tamu' },
-                            { tag: '{jadwal_acara}', label: 'Daftar Jadwal Acara' },
-                            { tag: '{lokasi_utama}', label: 'Lokasi Acara' },
-                            { tag: '{mempelai_pria}', label: 'Nama Mempelai Pria' },
-                            { tag: '{mempelai_wanita}', label: 'Nama Mempelai Wanita' },
-                            { tag: '{panggilan_pria}', label: 'Panggilan Pria' },
-                            { tag: '{panggilan_wanita}', label: 'Panggilan Wanita' },
-                          ].map((v) => (
-                            <button
-                              key={v.tag}
-                              type="button"
-                              onClick={() => {
-                                if (waGlobalTab === 'vip') {
-                                  setWaTemplateVipDraft(
-                                    (prev) => `${prev} ${v.tag}`
-                                  );
-                                } else {
-                                  setWaTemplateRegularDraft(
-                                    (prev) => `${prev} ${v.tag}`
-                                  );
-                                }
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] font-mono text-[11px] font-bold transition-colors"
-                              title={`Sisipkan ${v.label}`}
-                            >
-                              + {v.tag}
-                            </button>
+                          {waTemplatesDraft.map((tpl) => (
+                            <option key={tpl.id} value={tpl.id}>
+                              {tpl.name}
+                              {tpl.isDefault ? ' (Bawaan)' : ''}
+                            </option>
                           ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="font-bold text-stone-800 truncate">
-                            {waGlobalTab === 'vip'
-                              ? 'Template Pesan VIP (P1)'
-                              : 'Template Pesan Reguler'}
-                          </label>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleAddCustomWaTemplate}
+                          className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50 font-bold text-xs cursor-pointer shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Template Baru</span>
+                        </button>
+                        {waTemplatesDraft.length > 1 && (
                           <button
                             type="button"
-                            onClick={() => {
-                              if (waGlobalTab === 'vip') {
-                                setWaTemplateVipDraft(DEFAULT_WA_TEMPLATE_VIP);
-                              } else {
-                                setWaTemplateRegularDraft(
-                                  DEFAULT_WA_TEMPLATE_REGULAR
-                                );
-                              }
-                              showToast('Template dikembalikan ke teks bawaan.');
-                            }}
-                            className="text-[11px] font-bold text-rose-600 hover:underline"
+                            onClick={handleDeleteActiveWaTemplate}
+                            className="inline-flex items-center gap-1 px-2.5 py-2 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-stone-200 hover:border-rose-200 font-semibold text-xs cursor-pointer shrink-0"
+                            title="Hapus template ini"
                           >
-                            Reset Bawaan
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        </div>
-                        <textarea
-                          rows={11}
-                          value={
-                            waGlobalTab === 'vip'
-                              ? waTemplateVipDraft
-                              : waTemplateRegularDraft
-                          }
-                          onChange={(e) => {
-                            if (waGlobalTab === 'vip') {
-                              setWaTemplateVipDraft(e.target.value);
-                            } else {
-                              setWaTemplateRegularDraft(e.target.value);
-                            }
-                          }}
-                          className="w-full p-3.5 rounded-xl border border-stone-300 bg-white focus:border-[#B68D40] focus:outline-none font-sans text-xs leading-relaxed"
-                        />
+                        )}
                       </div>
+
+                      {activeTemplateObj && (
+                        <>
+                          {/* Nama Template & Status Bawaan */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                                Nama Kategori Template
+                              </label>
+                              <input
+                                type="text"
+                                value={activeTemplateObj.name}
+                                onChange={(e) =>
+                                  handleUpdateActiveWaTemplate((t) => ({
+                                    ...t,
+                                    name: e.target.value,
+                                  }))
+                                }
+                                placeholder="Contoh: Keluarga Inti, Rekan Kantor, Alumni..."
+                                className="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs font-semibold text-stone-900 focus:border-[#B68D40] focus:outline-none"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <label className="flex items-center gap-2 px-3 py-2 rounded-xl border border-stone-200 bg-[#FAF8F5] w-full cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={Boolean(activeTemplateObj.isDefault)}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setWaTemplatesDraft((prev) =>
+                                      prev.map((t) => ({
+                                        ...t,
+                                        isDefault:
+                                          t.id === activeTemplateObj.id
+                                            ? checked
+                                            : checked
+                                              ? false
+                                              : t.isDefault,
+                                      }))
+                                    );
+                                  }}
+                                  className="rounded border-stone-300 text-[#B68D40] focus:ring-[#B68D40]"
+                                />
+                                <span className="text-[11px] font-semibold text-stone-700">
+                                  Jadikan template utama (bawaan)
+                                </span>
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Aturan Otomatis Berdasarkan Kategori / Prioritas Tamu */}
+                          <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200/80 space-y-2">
+                            <p className="text-[11px] font-bold text-stone-700">
+                              Terapkan Otomatis untuk Kategori / Prioritas Tamu (Opsional)
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(
+                                [
+                                  'Pejabat/VIP',
+                                  'Keluarga',
+                                  'Rekan Kerja/Polri',
+                                  'Teman/Sahabat',
+                                  'Tetangga/Gereja',
+                                ] as GuestType[]
+                              ).map((gt) => {
+                                const selected = Boolean(
+                                  activeTemplateObj.matchGuestTypes?.includes(gt)
+                                );
+                                return (
+                                  <button
+                                    key={gt}
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateActiveWaTemplate((t) => {
+                                        const curr = t.matchGuestTypes || [];
+                                        return {
+                                          ...t,
+                                          matchGuestTypes: selected
+                                            ? curr.filter((x) => x !== gt)
+                                            : [...curr, gt],
+                                        };
+                                      })
+                                    }
+                                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors cursor-pointer ${
+                                      selected
+                                        ? 'bg-[#FAF3E3] text-[#8B6914] border-[#C5A059]'
+                                        : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
+                                    }`}
+                                  >
+                                    {selected ? '✓ ' : ''}
+                                    {gt}
+                                  </button>
+                                );
+                              })}
+                              {(
+                                ['P1 - VIP', 'P2 - Utama', 'P3 - Reguler'] as GuestPriority[]
+                              ).map((pr) => {
+                                const selected = Boolean(
+                                  activeTemplateObj.matchPriorities?.includes(pr)
+                                );
+                                return (
+                                  <button
+                                    key={pr}
+                                    type="button"
+                                    onClick={() =>
+                                      handleUpdateActiveWaTemplate((t) => {
+                                        const curr = t.matchPriorities || [];
+                                        return {
+                                          ...t,
+                                          matchPriorities: selected
+                                            ? curr.filter((x) => x !== pr)
+                                            : [...curr, pr],
+                                        };
+                                      })
+                                    }
+                                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors cursor-pointer ${
+                                      selected
+                                        ? 'bg-stone-900 text-white border-stone-900'
+                                        : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
+                                    }`}
+                                  >
+                                    {selected ? '✓ ' : ''}
+                                    {pr}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Sisipkan Variabel (Label Bahasa Manusia) */}
+                          <div className="space-y-1.5">
+                            <p className="text-[11px] font-bold text-stone-700">
+                              Sisipkan Data Otomatis
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                { tag: '{nama_tamu}', label: 'Nama Tamu' },
+                                { tag: '{instansi}', label: 'Instansi' },
+                                { tag: '{link_undangan}', label: 'Tautan' },
+                                { tag: '{jadwal_acara}', label: 'Jadwal Acara' },
+                                { tag: '{lokasi_utama}', label: 'Lokasi' },
+                                { tag: '{mempelai_pria}', label: 'Mempelai Pria' },
+                                { tag: '{mempelai_wanita}', label: 'Mempelai Wanita' },
+                                { tag: '{panggilan_pria}', label: 'Panggilan Pria' },
+                                { tag: '{panggilan_wanita}', label: 'Panggilan Wanita' },
+                                { tag: '{kode_undangan}', label: 'Kode Akses' },
+                              ].map((v) => (
+                                <button
+                                  key={v.tag}
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateActiveWaTemplate((t) => ({
+                                      ...t,
+                                      content: `${t.content} ${v.tag}`,
+                                    }))
+                                  }
+                                  className="px-2.5 py-1 rounded-lg bg-white hover:bg-[#FAF3E3] border border-stone-200 hover:border-[#D4AF37]/50 text-stone-700 hover:text-[#8B6914] text-[11px] font-semibold transition-colors cursor-pointer"
+                                  title={`Sisipkan ${v.tag}`}
+                                >
+                                  + {v.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Isi Pesan */}
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="font-bold text-stone-800 truncate">
+                                Isi Pesan — {activeTemplateObj.name}
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleUpdateActiveWaTemplate((t) => ({
+                                    ...t,
+                                    content:
+                                      t.id === 'tpl_vip'
+                                        ? DEFAULT_WA_TEMPLATE_VIP
+                                        : DEFAULT_WA_TEMPLATE_REGULAR,
+                                  }));
+                                  showToast('Isi template dikembalikan ke bawaan.');
+                                }}
+                                className="text-[11px] font-semibold text-stone-500 hover:text-rose-600 cursor-pointer"
+                              >
+                                Reset Bawaan
+                              </button>
+                            </div>
+                            <textarea
+                              rows={10}
+                              value={activeTemplateObj.content}
+                              onChange={(e) =>
+                                handleUpdateActiveWaTemplate((t) => ({
+                                  ...t,
+                                  content: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3.5 rounded-xl border border-stone-300 bg-white focus:border-[#B68D40] focus:outline-none font-sans text-xs leading-relaxed"
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
+                    <div className="px-5 sm:px-6 py-3.5 border-t border-stone-200/80 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => void handleSaveGlobalWaTemplates(true)}
-                        className="px-4 py-2 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs transition-all cursor-pointer"
-                        title="Samakan teks template ini untuk SEMUA tamu (baik VIP/P1 maupun Umum/Reguler)"
+                        className="px-4 py-2 rounded-full border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 font-semibold text-xs transition-all cursor-pointer"
+                        title="Samakan isi teks ini untuk semua template yang ada"
                       >
-                        Terapkan ke VIP &amp; Reguler
+                        Samakan ke Semua Kategori
                       </button>
                       <button
                         type="button"
@@ -27080,7 +27354,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               ? [
                   {
                     id: 'budget' as AdminModuleTab,
-                    label: 'Moneter',
+                    label: 'Anggaran',
                     title: 'Manajemen Anggaran, Vendor & Pembayaran',
                     icon: Wallet,
                   },

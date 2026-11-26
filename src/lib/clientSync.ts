@@ -774,17 +774,112 @@ export function buildWaHref(phone: string | undefined, messageText: string): str
     : `https://api.whatsapp.com/send?text=${encodedText}`;
 }
 
+export function getEffectiveWaTemplates(
+  settings: WeddingSettings
+): import('@/types').WaTemplateItem[] {
+  if (Array.isArray(settings.waTemplates) && settings.waTemplates.length > 0) {
+    return settings.waTemplates.map((t) => ({
+      ...t,
+      content: sanitizeWhatsAppText(t.content || ''),
+    }));
+  }
+
+  return [
+    {
+      id: 'tpl_vip',
+      name: 'VIP / Pejabat',
+      matchGuestTypes: ['Pejabat/VIP'],
+      matchPriorities: ['P1 - VIP'],
+      isDefault: false,
+      content:
+        settings.waTemplateVip && settings.waTemplateVip.trim()
+          ? sanitizeWhatsAppText(settings.waTemplateVip)
+          : DEFAULT_WA_TEMPLATE_VIP,
+    },
+    {
+      id: 'tpl_regular',
+      name: 'Umum / Reguler',
+      matchGuestTypes: [],
+      matchPriorities: [],
+      isDefault: true,
+      content:
+        settings.waTemplateRegular && settings.waTemplateRegular.trim()
+          ? sanitizeWhatsAppText(settings.waTemplateRegular)
+          : DEFAULT_WA_TEMPLATE_REGULAR,
+    },
+  ];
+}
+
+export function resolveWaTemplateForGuest(
+  guest: WeddingGuest,
+  settings: WeddingSettings,
+  overrideTemplateId?: string
+): import('@/types').WaTemplateItem {
+  const templates = getEffectiveWaTemplates(settings);
+  if (overrideTemplateId) {
+    const exactOverride = templates.find((t) => t.id === overrideTemplateId);
+    if (exactOverride) return exactOverride;
+  }
+  if (guest.waTemplateId) {
+    const guestAssigned = templates.find((t) => t.id === guest.waTemplateId);
+    if (guestAssigned) return guestAssigned;
+  }
+
+  // Score rule matches: exact GuestType + Priority > GuestType > Priority > Legacy VIP rank heuristic
+  const isVipRankName = /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(
+    guest.guestName || ''
+  );
+  let bestMatch: import('@/types').WaTemplateItem | null = null;
+  let bestScore = 0;
+
+  for (const tpl of templates) {
+    const typeMatch =
+      Array.isArray(tpl.matchGuestTypes) &&
+      tpl.matchGuestTypes.includes(guest.guestType);
+    const prioMatch =
+      Array.isArray(tpl.matchPriorities) &&
+      tpl.matchPriorities.includes(guest.priority);
+    let score = 0;
+    if (typeMatch && prioMatch) score = 4;
+    else if (typeMatch) score = 3;
+    else if (prioMatch) score = 2;
+    else if (isVipRankName && tpl.id === 'tpl_vip') score = 1;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = tpl;
+    }
+  }
+
+  if (bestMatch) return bestMatch;
+  return templates.find((t) => t.isDefault) || templates[0];
+}
+
 export function generateWhatsAppMessage(
   guest: WeddingGuest,
   settings: WeddingSettings,
-  originUrl?: string
-): { inviteUrl: string; messageText: string; waHref: string; isVipPolri: boolean } {
+  originUrl?: string,
+  overrideTemplateId?: string
+): {
+  inviteUrl: string;
+  messageText: string;
+  waHref: string;
+  isVipPolri: boolean;
+  templateId: string;
+  templateName: string;
+} {
   const inviteUrl = buildGuestInvitationUrl(
     guest,
     originUrl,
     settings.activeClientId
   );
+  const resolvedTemplate = resolveWaTemplateForGuest(
+    guest,
+    settings,
+    overrideTemplateId
+  );
   const isVipPolri =
+    resolvedTemplate.id === 'tpl_vip' ||
     guest.guestType === 'Pejabat/VIP' ||
     guest.priority === 'P1 - VIP' ||
     /KOMJEN|IRJEN|BRIGJEN|KOMBES|AKBP|JENDERAL/i.test(guest.guestName);
@@ -808,13 +903,12 @@ export function generateWhatsAppMessage(
     ? `${lastEvent.venue}${lastEvent.address ? ` — ${lastEvent.address}` : ''}`
     : `${settings.event3Venue}${settings.event3Address ? ` — ${settings.event3Address}` : ''}`;
 
-  const rawTemplate = isVipPolri
-    ? settings.waTemplateVip && settings.waTemplateVip.trim()
-      ? sanitizeWhatsAppText(settings.waTemplateVip)
-      : DEFAULT_WA_TEMPLATE_VIP
-    : settings.waTemplateRegular && settings.waTemplateRegular.trim()
-    ? sanitizeWhatsAppText(settings.waTemplateRegular)
-    : DEFAULT_WA_TEMPLATE_REGULAR;
+  const rawTemplate =
+    resolvedTemplate.content && resolvedTemplate.content.trim()
+      ? sanitizeWhatsAppText(resolvedTemplate.content)
+      : isVipPolri
+        ? DEFAULT_WA_TEMPLATE_VIP
+        : DEFAULT_WA_TEMPLATE_REGULAR;
 
   const rawInstansi = (guest.institution || '').trim();
   const isDefaultDiTempat =
@@ -855,7 +949,14 @@ export function generateWhatsAppMessage(
 
   const waHref = buildWaHref(guest.phone, messageText);
 
-  return { inviteUrl, messageText, waHref, isVipPolri };
+  return {
+    inviteUrl,
+    messageText,
+    waHref,
+    isVipPolri,
+    templateId: resolvedTemplate.id,
+    templateName: resolvedTemplate.name,
+  };
 }
 
 function escapeCsvCell(val: unknown): string {

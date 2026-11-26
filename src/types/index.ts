@@ -95,6 +95,7 @@ export interface WeddingGuest {
   attendanceStatus: AttendanceStatus;
   notes: string;
   wishes?: string;
+  waTemplateId?: string;
   sessionChoice?: 'Biston & Pemberkatan' | 'Pemberkatan & Resepsi' | 'Resepsi Saja' | 'Semua Sesi' | string;
   createdAt: string;
   updatedAt: string;
@@ -169,6 +170,15 @@ export interface DigitalGiftAccount {
   type: 'BANK' | 'EWALLET' | 'QRIS' | 'CRYPTO' | 'PAYPAL';
   cryptoNetwork?: string;
   currencySymbol?: string;
+}
+
+export interface WaTemplateItem {
+  id: string;
+  name: string;
+  matchGuestTypes?: GuestType[];
+  matchPriorities?: GuestPriority[];
+  isDefault?: boolean;
+  content: string;
 }
 
 export interface LoveStoryItem {
@@ -366,7 +376,9 @@ export interface WeddingSettings {
   invitationOpeningText: string;
   invitationClosingText: string;
 
-  // Global Default WhatsApp Invitation Templates (VIP/Pejabat & Regular/Umum)
+  // Flexible Multi-Category WhatsApp Invitation Templates (User-defined categories + auto-match rules)
+  waTemplates?: WaTemplateItem[];
+  // Legacy fallback fields (kept synced for backward compatibility)
   waTemplateVip?: string;
   waTemplateRegular?: string;
 

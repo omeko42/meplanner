@@ -549,6 +549,11 @@ function WeddingAppContent() {
   const isCloudHydratedRef = useRef(false);
   const cloudHydrationInFlightRef = useRef<Promise<boolean> | null>(null);
   const [isHydratingCloudAdmin, setIsHydratingCloudAdmin] = useState(false);
+  const [isCheckingInitialAuth, setIsCheckingInitialAuth] = useState<boolean>(
+    () =>
+      urlMode === 'admin' ||
+      (!hasInitialGuestOrClientUrl && getStoredViewMode() === 'ADMIN')
+  );
 
   const clientGroups = useMemo(() => buildEffectiveClientGroups(state), [state]);
 
@@ -989,6 +994,11 @@ function WeddingAppContent() {
         setViewMode('PUBLIC');
         if (urlMode === 'admin') {
           setIsLoginModalOpen(true);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsCheckingInitialAuth(false);
         }
       });
 
@@ -4200,10 +4210,11 @@ function WeddingAppContent() {
             onOpenLandingPage={handleOpenLandingPage}
           />
         </div>
-      ) : viewMode === 'ADMIN' &&
-        adminUser &&
-        isHydratingCloudAdmin &&
-        !isCloudHydratedRef.current ? (
+      ) : isCheckingInitialAuth ||
+        (viewMode === 'ADMIN' &&
+          adminUser &&
+          isHydratingCloudAdmin &&
+          !isCloudHydratedRef.current) ? (
         <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
           <BrandLoader size="lg" />
         </div>
@@ -4752,8 +4763,8 @@ function WeddingAppContent() {
                     </h3>
                     <p className="text-xs text-stone-500 mt-1">
                       {loginLang === 'ID'
-                        ? 'Tempel 21-digit Key Hash undangan, INV-XXXX, atau kode workspace Anda'
-                        : 'Paste your 21-digit invitation hash, INV-XXXX, or workspace code'}
+                        ? 'Masukkan kode undangan atau tempel tautan yang Anda terima'
+                        : 'Enter your invitation code or paste the link you received'}
                     </p>
                   </div>
 
@@ -4762,8 +4773,8 @@ function WeddingAppContent() {
                       <div className="flex items-center justify-between mb-1.5">
                         <label className="block text-xs font-bold text-stone-800">
                           {loginLang === 'ID'
-                            ? 'Key Hash / Kode Undangan'
-                            : 'Invitation Hash / Access Key'}
+                            ? 'Kode Undangan'
+                            : 'Invitation Code'}
                         </label>
                         <button
                           type="button"

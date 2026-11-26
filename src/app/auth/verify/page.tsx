@@ -22,23 +22,23 @@ function VerifyShell({
   state: VerifyState;
   message: string;
 }) {
+  if (state === 'checking') {
+    return (
+      <main className="min-h-dvh flex items-center justify-center bg-[#FAF8F5] px-5">
+        <BrandLoader size="lg" />
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-dvh flex items-center justify-center bg-[#FAF7F0] px-5 py-12">
-      <div className="w-full max-w-md rounded-3xl border border-stone-200/70 bg-white/90 p-8 text-center shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)] backdrop-blur animate-meplan-enter">
-        {state === 'checking' ? (
-          <BrandLoader size="md" className="py-4" />
-        ) : (
-          <div className="mb-5 flex justify-center">
-            <WeddingRingsIcon className="h-11 w-11" />
-          </div>
-        )}
+    <main className="min-h-dvh flex items-center justify-center bg-[#FAF8F5] px-5 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-stone-200/70 bg-white p-8 text-center shadow-sm animate-meplan-enter">
+        <div className="mb-5 flex justify-center">
+          <WeddingRingsIcon className="h-11 w-11" />
+        </div>
 
         <h1 className="text-xl font-extrabold tracking-tight text-stone-900">
-          {state === 'checking'
-            ? 'Memverifikasi email...'
-            : state === 'success'
-              ? 'Verifikasi berhasil'
-              : 'Verifikasi gagal'}
+          {state === 'success' ? 'Verifikasi berhasil' : 'Verifikasi gagal'}
         </h1>
 
         <p
@@ -48,9 +48,7 @@ function VerifyShell({
           role="status"
           aria-live="polite"
         >
-          {state === 'checking'
-            ? 'Mohon tunggu sebentar, kami sedang memeriksa tautan verifikasi Anda.'
-            : message}
+          {message}
         </p>
 
         {state === 'error' && (

@@ -66,6 +66,7 @@ function sanitizePublicSettings(settings: WeddingSettings): WeddingSettings {
   delete safe.commercialPaypalUrl;
   delete safe.commercialCryptoWalletAddress;
   delete safe.deletedIdsRegistry;
+  delete safe.waTemplates;
   delete safe.waTemplateVip;
   delete safe.waTemplateRegular;
   delete safe.ownerGoogleEmail;

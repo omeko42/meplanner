@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
+import { FilterPopover } from '@/components/ui/FilterPopover';
 import {
   ReactGoogleLoginButton,
   type GoogleLoginResponse,
@@ -7275,55 +7276,78 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                   </p>
                 </div>
 
-                {/* Clean Category Filter Tabs */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
-                  {(
-                    [
+                {/* Clean Search + Cascading Filter Popover for Theme Catalog */}
+                <div className="flex flex-wrap items-center justify-center gap-2.5 mt-8 max-w-2xl mx-auto">
+                  <div className="relative flex-1 min-w-[210px] max-w-xs">
+                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={catalogSearchQuery}
+                      onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                      placeholder={
+                        lang === 'ID' ? 'Cari nama tema...' : 'Search theme name...'
+                      }
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-stone-200 bg-white text-xs font-medium text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-[#C5A059]"
+                    />
+                  </div>
+                  <FilterPopover
+                    buttonLabel={lang === 'ID' ? 'Filter Tema' : 'Filter Themes'}
+                    groups={[
                       {
-                        id: 'ALL' as const,
-                        label: lang === 'ID' ? 'Semua Tema' : 'All Themes',
-                      },
-                      {
-                        id: 'WEDDING' as const,
-                        label: lang === 'ID' ? 'Pernikahan' : 'Wedding',
-                      },
-                      {
-                        id: 'BIRTHDAY' as const,
-                        label: lang === 'ID' ? 'Ulang Tahun' : 'Birthday',
-                      },
-                      {
-                        id: 'GRADUATION' as const,
-                        label: lang === 'ID' ? 'Wisuda' : 'Graduation',
-                      },
-                      {
-                        id: 'MEETING' as const,
-                        label: lang === 'ID' ? 'Rapat Resmi' : 'Corporate',
-                      },
-                      {
-                        id: 'GALA_DINNER' as const,
-                        label: lang === 'ID' ? 'Gala Dinner' : 'Gala Dinner',
-                      },
-                    ] as const
-                  ).map((evBtn) => {
-                    const isAct = catalogEventFilter === evBtn.id;
-                    return (
-                      <button
-                        key={evBtn.id}
-                        type="button"
-                        onClick={() => {
-                          setCatalogEventFilter(evBtn.id);
+                        id: 'event_type',
+                        label: lang === 'ID' ? 'Jenis Acara' : 'Event Type',
+                        value: catalogEventFilter,
+                        onChange: (v) => {
+                          setCatalogEventFilter(v as 'ALL' | EventCategoryType);
                           setCatalogStyleFilter('ALL');
-                        }}
-                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                          isAct
-                            ? 'bg-stone-900 text-white shadow-xs'
-                            : 'bg-white hover:bg-[#FAF3E3] text-stone-800 border border-stone-200'
-                        }`}
-                      >
-                        {evBtn.label}
-                      </button>
-                    );
-                  })}
+                        },
+                        options: [
+                          {
+                            value: 'ALL',
+                            label: lang === 'ID' ? 'Semua Acara' : 'All Events',
+                          },
+                          {
+                            value: 'WEDDING',
+                            label: lang === 'ID' ? 'Pernikahan' : 'Wedding',
+                          },
+                          {
+                            value: 'BIRTHDAY',
+                            label: lang === 'ID' ? 'Ulang Tahun' : 'Birthday',
+                          },
+                          {
+                            value: 'GRADUATION',
+                            label: lang === 'ID' ? 'Wisuda' : 'Graduation',
+                          },
+                          {
+                            value: 'MEETING',
+                            label: lang === 'ID' ? 'Rapat Resmi' : 'Corporate',
+                          },
+                          {
+                            value: 'GALA_DINNER',
+                            label: 'Gala Dinner',
+                          },
+                        ],
+                      },
+                      {
+                        id: 'style',
+                        label: lang === 'ID' ? 'Gaya Desain' : 'Design Style',
+                        value: catalogStyleFilter,
+                        onChange: (v) =>
+                          setCatalogStyleFilter(v as 'ALL' | CatalogThemeStyle),
+                        options: [
+                          {
+                            value: 'ALL',
+                            label: lang === 'ID' ? 'Semua Gaya' : 'All Styles',
+                          },
+                          { value: 'MINIMALIS', label: 'Minimalis' },
+                          { value: 'FLORAL', label: 'Floral' },
+                          { value: 'ELEGAN', label: 'Elegan' },
+                          { value: 'ADAT', label: 'Adat & Budaya' },
+                          { value: 'CORPORATE', label: 'Resmi & Bisnis' },
+                        ],
+                      },
+                    ]}
+                  />
                 </div>
 
                 {/* 4-Column Grid of Clean Phone Mockup Cards */}

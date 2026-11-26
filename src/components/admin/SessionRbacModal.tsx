@@ -43,14 +43,14 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-extrabold text-stone-900 flex items-center gap-2">
-                <span>Status Sesi &amp; Otorisasi RBAC</span>
+                <span>Status Akun &amp; Hak Akses</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
                   Aktif
                 </span>
               </h3>
               <p className="text-[11px] text-stone-500">
-                MEPlanner Multi-Tenant Identity &amp; Access Management (JWT Enkripsi)
+                Ringkasan profil pengelola dan batasan akses ruang kerja Anda
               </p>
             </div>
           </div>
@@ -103,12 +103,12 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
           <div className="p-4 rounded-2xl bg-white border border-stone-200 space-y-2.5 shadow-2xs">
             <span className="text-[11px] font-extrabold text-stone-800 uppercase tracking-wider flex items-center gap-1.5">
               <Layers className="w-3.5 h-3.5 text-[#8B6914]" />
-              Matriks Otorisasi RBAC (Role-Based Access Control)
+              Hak Akses Fitur
             </span>
             <div className="divide-y divide-stone-100 text-[11px]">
               <div className="py-2 flex items-center justify-between">
                 <span className="text-stone-700">
-                  Akses Multi-Tenant &amp; Beralih Ruang Kerja Klien
+                  Beralih Ruang Kerja Klien
                 </span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded-md ${
@@ -117,12 +117,12 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
                       : 'bg-stone-100 text-stone-400'
                   }`}
                 >
-                  {isSuperadmin ? '✓ Diizinkan (Superadmin)' : '✗ Terkunci per-Klien'}
+                  {isSuperadmin ? 'Diizinkan' : 'Khusus Pemilik'}
                 </span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-stone-700">
-                  Manajemen Anggaran &amp; Biaya (Moneter)
+                  Pengelolaan Anggaran &amp; Vendor
                 </span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded-md ${
@@ -131,28 +131,26 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
                       : 'bg-rose-50 text-rose-600'
                   }`}
                 >
-                  {!isPanitia
-                    ? '✓ Diizinkan (Mempelai/Superadmin)'
-                    : '✗ Ditolak (Panitia Non-Budgeting)'}
+                  {!isPanitia ? 'Diizinkan' : 'Tidak Tersedia untuk Panitia'}
                 </span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-stone-700">
-                  Manajemen Tamu, Kuota Pax, Meja &amp; RSVP
+                  Daftar Tamu, Kuota Pax &amp; RSVP
                 </span>
                 <span className="font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">
-                  ✓ Diizinkan Penuh
+                  Diizinkan
                 </span>
               </div>
               <div className="py-2 flex items-center justify-between">
-                <span className="text-stone-700">Checklist Persiapan &amp; Progres Tugas</span>
+                <span className="text-stone-700">Checklist Persiapan Acara</span>
                 <span className="font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">
-                  ✓ Diizinkan Penuh
+                  Diizinkan
                 </span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-stone-700">
-                  Pengaturan Tema, Background, Musik &amp; Ornamen
+                  Desain Tema, Musik &amp; Konten Undangan
                 </span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded-md ${
@@ -161,12 +159,12 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
                       : 'bg-stone-100 text-stone-400'
                   }`}
                 >
-                  {!isPanitia ? '✓ Diizinkan' : '✗ Read-Only'}
+                  {!isPanitia ? 'Diizinkan' : 'Hanya Lihat'}
                 </span>
               </div>
               <div className="py-2 flex items-center justify-between">
                 <span className="text-stone-700">
-                  Master Wallet, Payment Gateway &amp; Commercial Engine
+                  Pengaturan Pembayaran &amp; Lisensi
                 </span>
                 <span
                   className={`font-bold px-2 py-0.5 rounded-md ${
@@ -175,53 +173,17 @@ export const SessionRbacModal: React.FC<SessionRbacModalProps> = ({
                       : 'bg-stone-100 text-stone-400'
                   }`}
                 >
-                  {isSuperadmin ? '✓ Diizinkan (Owner)' : '✗ Dibatasi'}
+                  {isSuperadmin ? 'Diizinkan' : 'Dibatasi'}
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-[#F0FDF4] border border-emerald-200/80 space-y-2">
-            <span className="text-[11px] font-extrabold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-emerald-700" />
-              Spesifikasi Keamanan Token JWT &amp; Enkripsi
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-stone-700">
-              <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
-                <p className="text-[10px] text-stone-500 font-semibold">
-                  Tipe Token &amp; Enkripsi
-                </p>
-                <p className="font-mono font-bold text-stone-900">
-                  JWT (HS256 HMAC-SHA256)
-                </p>
-              </div>
-              <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
-                <p className="text-[10px] text-stone-500 font-semibold">
-                  Penyimpanan Peramban
-                </p>
-                <p className="font-mono font-bold text-stone-900">
-                  HttpOnly Cookie (Anti-XSS)
-                </p>
-              </div>
-              <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
-                <p className="text-[10px] text-stone-500 font-semibold">Masa Aktif Sesi</p>
-                <p className="font-bold text-emerald-800">
-                  Sliding Window 4 Jam (Auto-Renew)
-                </p>
-              </div>
-              <div className="bg-white/80 p-2 rounded-xl border border-emerald-100">
-                <p className="text-[10px] text-stone-500 font-semibold">
-                  Isolasi Multi-Tenant
-                </p>
-                <p className="font-bold text-stone-900">
-                  Terkunci via Server Claim clientId
-                </p>
-              </div>
-            </div>
-            <p className="text-[10px] text-stone-500 leading-relaxed mt-1">
-              *Catatan Keamanan: Tanpa token JWT valid di HttpOnly Cookie, seluruh akses API dan
-              Admin Portal ditolak server dengan kode 401 Unauthorized. Penyerang luar tidak dapat
-              membaca atau memalsukan token karena ditandatangani secara rahasia oleh server.
+          <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-stone-200 flex items-start gap-2.5 text-xs text-stone-600">
+            <Lock className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              Sesi login Anda dilindungi secara terenkripsi dan otomatis diperpanjang selama aktif.
+              Setiap akun hanya dapat mengakses data acara pada ruang kerjanya masing-masing.
             </p>
           </div>
         </div>
