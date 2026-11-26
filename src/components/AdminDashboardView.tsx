@@ -8370,6 +8370,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => {
+                            if (!isSuperadmin && !activePackageInfo.canExportReports) {
+                              showToast(
+                                '🔒 Ekspor Daftar Tamu Excel tersedia mulai Paket Business. Silakan upgrade paket Anda!'
+                              );
+                              setActiveTab('settings');
+                              setSettingsMenuTab('paket');
+                              return;
+                            }
                             const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
                             const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
                             triggerFileDownload(
@@ -8379,15 +8387,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             );
                             showToast('Daftar Tamu Excel (.xls) berhasil diunduh!');
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-[11px] transition-colors cursor-pointer"
                           title="Unduh Daftar Tamu format Microsoft Excel (.xls)"
                         >
                           <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                          <span>Excel</span>
+                          <span>{!isSuperadmin && !activePackageInfo.canExportReports ? '🔒 Excel' : 'Excel'}</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => {
+                            if (!isSuperadmin && !activePackageInfo.canExportReports) {
+                              showToast(
+                                '🔒 Ekspor Daftar Tamu Word tersedia mulai Paket Business. Silakan upgrade paket Anda!'
+                              );
+                              setActiveTab('settings');
+                              setSettingsMenuTab('paket');
+                              return;
+                            }
                             const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
                             const safeSlug = coupleLabel.replace(/[^a-zA-Z0-9]+/g, '_');
                             triggerFileDownload(
@@ -8397,23 +8413,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             );
                             showToast('Daftar Tamu Word (.doc) berhasil diunduh!');
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-bold text-[11px] transition-colors cursor-pointer"
                           title="Unduh Daftar Tamu format Microsoft Word (.doc)"
                         >
                           <Download className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                          <span>Word</span>
+                          <span>{!isSuperadmin && !activePackageInfo.canExportReports ? '🔒 Word' : 'Word'}</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => {
+                            if (!isSuperadmin && !activePackageInfo.canExportReports) {
+                              showToast(
+                                '🔒 Ekspor Buku Tamu PDF tersedia mulai Paket Business. Silakan upgrade paket Anda!'
+                              );
+                              setActiveTab('settings');
+                              setSettingsMenuTab('paket');
+                              return;
+                            }
                             const coupleLabel = `${state.settings.groomNickname || 'Mempelai'} & ${state.settings.brideNickname || 'Pasangan'}`;
                             openGuestsPdfPrintPreview(filteredGuests, coupleLabel);
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-[11px] transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-[11px] transition-colors cursor-pointer"
                           title="Cetak atau Simpan Daftar Tamu sebagai PDF"
                         >
                           <Download className="w-3.5 h-3.5 text-rose-700 shrink-0" />
-                          <span>PDF</span>
+                          <span>{!isSuperadmin && !activePackageInfo.canExportReports ? '🔒 PDF' : 'PDF'}</span>
                         </button>
                       </>
                     )}
@@ -16879,7 +16903,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             '2 Undangan Premium (Aktif Selamanya)',
                             'Unlimited Tamu & Multi-Acara',
                             'Full Event Planner (Tracker, Checklist & Budget Moneter)',
-                            'Layar Penerima Tamu VIP & Ekspor Excel (.CSV)',
+                            'Layar Penerima Tamu VIP & Ekspor Excel (.xlsx), Word & PDF',
                           ],
                           popular: false,
                         },

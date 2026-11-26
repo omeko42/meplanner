@@ -3947,7 +3947,7 @@ function WeddingAppContent() {
   return (
     <>
       {isDemoManagerActive && activeDemoAdminState && activeDemoAdminUser ? (
-        <div className="relative">
+        <div className="relative pb-16">
           {demoSandboxBar}
           <AdminDashboardView
             state={activeDemoAdminState}
