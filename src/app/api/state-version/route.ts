@@ -6,7 +6,7 @@ import {
   SUPABASE_TABLE_NAME,
   SUPABASE_ROW_ID,
 } from '@/lib/supabaseCloud';
-import { SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env';
+import { SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const key = SUPABASE_SERVICE_ROLE_KEY;
+    const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
     const headers: Record<string, string> = {
       apikey: key || '',
       Authorization: `Bearer ${key || ''}`,

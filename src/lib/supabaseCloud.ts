@@ -2289,7 +2289,7 @@ export async function fetchSupabaseStorageCapacity(
   };
 }
 
-function normalizeCloudState(
+export function normalizeCloudState(
   parsed: Partial<WeddingDatabaseSchema>,
   fallbackTimestamp?: string
 ): WeddingDatabaseSchema {
@@ -2688,6 +2688,7 @@ async function recoverFromRelationalTablesIfNeeded(
         {
           method: 'GET',
           cache: 'no-store',
+          credentials: 'include',
         }
       );
       if (!r.ok) return null;
@@ -2830,6 +2831,7 @@ export async function checkCloudStateUpdatedAt(): Promise<string | null> {
     const res = await fetch('/api/state-version', {
       method: 'GET',
       cache: 'no-store',
+      credentials: 'include',
     });
     if (!res.ok) return null;
     const json = (await res.json().catch(() => null)) as {
@@ -2848,17 +2850,23 @@ export async function checkCloudStateUpdatedAt(): Promise<string | null> {
 export async function loadStateFromSupabase(): Promise<{
   state: WeddingDatabaseSchema | null;
   tableExists: boolean;
+  unauthorized?: boolean;
 }> {
   const tryLoadViaSameOriginProxy = async (): Promise<{
     state: WeddingDatabaseSchema | null;
     tableExists: boolean;
+    unauthorized?: boolean;
   } | null> => {
     if (typeof window === 'undefined') return null;
     try {
       const proxyRes = await fetch('/api/supabase-sync', {
         method: 'GET',
         cache: 'no-store',
+        credentials: 'include',
       });
+      if (proxyRes.status === 401) {
+        return { state: null, tableExists: false, unauthorized: true };
+      }
       if (!proxyRes.ok) return null;
       const proxyJson = (await proxyRes.json()) as {
         ok?: boolean;
@@ -2892,9 +2900,15 @@ export async function loadStateFromSupabase(): Promise<{
     // no direct read path to the database, so the anon key it carries cannot
     // be used to pull the snapshot.
     const proxyResult = await tryLoadViaSameOriginProxy();
-    if (proxyResult) return proxyResult;
+    if (proxyResult) {
+      if (proxyResult.unauthorized) {
+        // User is simply not signed in yet; do NOT mark hydration complete so
+        // post-login hydration runs cleanly and never writes empty seed data.
+        setCloudStatus('IDLE', 'Menunggu sesi login');
+      }
+      return proxyResult;
+    }
 
-    markInitialCloudHydrationComplete(null);
     setCloudStatus('OFFLINE', 'Server tidak dapat memuat state');
     return { state: null, tableExists: false };
   } catch (err) {
@@ -2969,6 +2983,7 @@ async function performActualSupabaseUpsert(
         const freshRes = await fetch('/api/supabase-sync', {
           method: 'GET',
           cache: 'no-store',
+          credentials: 'include',
         }).catch(() => null);
         if (freshRes && freshRes.ok) {
           const freshJson = (await freshRes.json().catch(() => null)) as {
@@ -3006,6 +3021,7 @@ async function performActualSupabaseUpsert(
     const deletedSnap = getExplicitlyDeletedIdsSnapshot();
     return fetch('/api/supabase-sync', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         data: dataToSave,
@@ -3027,6 +3043,7 @@ async function performActualSupabaseUpsert(
       const deletedSnap = getExplicitlyDeletedIdsSnapshot();
       const proxyRes = await fetch('/api/supabase-sync', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           data: payloadToSave,

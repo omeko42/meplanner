@@ -21,9 +21,16 @@ import {
   inferTimelinePhase,
 } from '@/data/seedData';
 import {
-  loadStateFromSupabase,
+  normalizeCloudState,
   saveStateToSupabase,
 } from '@/lib/supabaseCloud';
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_ROW_ID,
+  SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_TABLE_NAME,
+  SUPABASE_URL,
+} from '@/lib/env';
 import { analyzeWishModeration } from '@/lib/clientSync';
 
 const PRIMARY_DB_PATH = path.join(process.cwd(), 'database', 'wedding_db.json');
@@ -381,12 +388,38 @@ export const serverStore = {
   reconcileWithSupabase: async (): Promise<WeddingDatabaseSchema> => {
     const localStore = getStore();
     try {
-      const { state: cloudState, tableExists } = await loadStateFromSupabase();
-      if (cloudState) {
-        persistStore(cloudState, false, false);
-        return cloudState;
-      } else if (tableExists) {
-        await saveStateToSupabase(localStore);
+      const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+      if (key && SUPABASE_URL) {
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`,
+          {
+            method: 'GET',
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              Accept: 'application/json',
+            },
+            cache: 'no-store',
+          }
+        );
+        if (res.ok) {
+          const rows = (await res.json()) as Array<{
+            id?: string;
+            data?: Partial<WeddingDatabaseSchema>;
+            updated_at?: string;
+          }>;
+          const row = Array.isArray(rows) ? rows[0] : undefined;
+          if (row?.data) {
+            const cloudState = normalizeCloudState(row.data, row.updated_at);
+            // Preserve server-held password hashes across cloud reconciliations
+            cloudState.adminUsers = preserveCredentials(
+              localStore.adminUsers,
+              cloudState.adminUsers
+            );
+            persistStore(cloudState, false, false);
+            return cloudState;
+          }
+        }
       }
     } catch {
       // Fallback to localStore

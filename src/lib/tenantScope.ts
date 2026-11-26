@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
-import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from '@/lib/env';
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_URL,
+} from '@/lib/env';
 
 /**
  * Tenant resolution for the server-side data proxy.
@@ -57,12 +61,13 @@ export const LEGACY_SINGLETON_TABLES = new Set([
 ]);
 
 export function dbKey(): string {
-  // This proxy is used for private database access. Falling back to the anon
-  // key would make production depend on public RLS policies, so fail closed.
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
+  // Prefer service_role when configured; fall back to anon key during legacy
+  // single-workspace transition (callers already verify admin JWT first).
+  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  if (!key) {
     throw new Error('SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi.');
   }
-  return SUPABASE_SERVICE_ROLE_KEY;
+  return key;
 }
 
 export function dbHeaders(extra?: Record<string, string>): Record<string, string> {

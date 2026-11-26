@@ -547,6 +547,8 @@ function WeddingAppContent() {
     Record<string, Partial<WeddingDatabaseSchema>>
   >({});
   const isCloudHydratedRef = useRef(false);
+  const cloudHydrationInFlightRef = useRef<Promise<boolean> | null>(null);
+  const [isHydratingCloudAdmin, setIsHydratingCloudAdmin] = useState(false);
 
   const clientGroups = useMemo(() => buildEffectiveClientGroups(state), [state]);
 
@@ -844,9 +846,78 @@ function WeddingAppContent() {
     });
   }, [state.settings.brandLogoUrl]);
 
+  const hydrateFromCloud = useCallback(async (force = false): Promise<boolean> => {
+    if (isCloudHydratedRef.current && !force) return true;
+    if (cloudHydrationInFlightRef.current) {
+      return cloudHydrationInFlightRef.current;
+    }
+
+    const task = (async () => {
+      setIsHydratingCloudAdmin(true);
+      try {
+        const lsState = getInitialClientState();
+        const idbState = await loadClientStateFromIndexedDB();
+        const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
+        const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
+        const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
+
+        const cloudResult = await loadStateFromSupabase();
+        const cloudState = cloudResult.state;
+
+        if (cloudState) {
+          const merged = mergePreservingLocalMedia(cloudState, bestLocal);
+          markInitialCloudHydrationComplete(merged);
+          isCloudHydratedRef.current = true;
+          setState(merged);
+          saveClientState(merged, false);
+          if (merged.guests.length > (cloudState.guests?.length || 0)) {
+            void saveStateToSupabase(merged);
+          }
+          return true;
+        }
+
+        if (cloudResult.tableExists) {
+          markInitialCloudHydrationComplete(null);
+          isCloudHydratedRef.current = true;
+          setState(bestLocal);
+          saveClientState(bestLocal, false);
+          const isEmptySeed =
+            bestLocal.guests.length === 0 &&
+            bestLocal.settings.groomParents === INITIAL_SETTINGS.groomParents;
+          if (!isEmptySeed) {
+            void saveStateToSupabase(bestLocal);
+          }
+          return true;
+        }
+
+        return false;
+      } finally {
+        setIsHydratingCloudAdmin(false);
+        cloudHydrationInFlightRef.current = null;
+      }
+    })();
+
+    cloudHydrationInFlightRef.current = task;
+    return task;
+  }, []);
+
   // Verify server-side HttpOnly JWT Admin Session & reconcile IndexedDB + Supabase Cloud + Server state on mount
   useEffect(() => {
     let isMounted = true;
+
+    (async () => {
+      // 1. Load local cache for instant initial render before Supabase responds
+      const lsState = getInitialClientState();
+      const idbState = await loadClientStateFromIndexedDB();
+
+      const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
+      const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
+      const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
+
+      if (isMounted && bestLocal) {
+        setState(bestLocal);
+      }
+    })();
 
     fetch('/api/auth', { cache: 'no-store', credentials: 'include' })
       .then(async (res) => {
@@ -899,6 +970,8 @@ function WeddingAppContent() {
           ) {
             changeViewMode('ADMIN');
           }
+          // Immediately hydrate real event state from Supabase Cloud once session is confirmed
+          void hydrateFromCloud(false);
         } else {
           setAdminUser(null);
           saveStoredAdminUser(null);
@@ -919,54 +992,18 @@ function WeddingAppContent() {
         }
       });
 
-    (async () => {
-      // 1. Load local cache for instant initial render before Supabase responds
-      const lsState = getInitialClientState();
-      const idbState = await loadClientStateFromIndexedDB();
-
-      const lsTime = new Date(lsState.lastSyncedAt || 0).getTime() || 0;
-      const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
-      const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
-
-      if (isMounted && bestLocal) {
-        setState(bestLocal);
-      }
-
-      // 2. Fetch from Supabase Cloud (Primary 100% Main Database)
-      const cloudResult = await loadStateFromSupabase();
-      if (!isMounted) return;
-
-      const cloudState = cloudResult.state;
-
-      if (cloudState) {
-        const merged = mergePreservingLocalMedia(cloudState, bestLocal);
-        markInitialCloudHydrationComplete(merged);
-        isCloudHydratedRef.current = true;
-        setState(merged);
-        saveClientState(merged, false);
-        if (merged.guests.length > (cloudState.guests?.length || 0)) {
-          void saveStateToSupabase(merged);
-        }
-      } else if (cloudResult.tableExists) {
-        markInitialCloudHydrationComplete(null);
-        isCloudHydratedRef.current = true;
-        setState(bestLocal);
-        saveClientState(bestLocal, false);
-        const isEmptySeed =
-          bestLocal.guests.length === 0 &&
-          bestLocal.settings.groomParents === INITIAL_SETTINGS.groomParents;
-        if (!isEmptySeed) {
-          void saveStateToSupabase(bestLocal);
-        }
-      } else {
-        setState(bestLocal);
-      }
-    })();
-
     return () => {
       isMounted = false;
     };
-  }, [urlMode, changeViewMode]);
+  }, [urlMode, changeViewMode, hydrateFromCloud]);
+
+  // Safety net: whenever adminUser transitions to authenticated and cloud state
+  // hasn't hydrated yet (e.g. post-login from modal), fetch Supabase Cloud right away.
+  useEffect(() => {
+    if (adminUser && !isCloudHydratedRef.current) {
+      void hydrateFromCloud(false);
+    }
+  }, [adminUser, hydrateFromCloud]);
 
   const isReconcilingRef = useRef(false);
   const lastReconcileCheckMsRef = useRef(0);
@@ -1074,6 +1111,7 @@ function WeddingAppContent() {
         const safePayload = stripLargeAudioForServerPayload(payload);
         const res = await fetch('/api/wedding', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action, payload: safePayload }),
         });
@@ -1441,9 +1479,16 @@ function WeddingAppContent() {
     saveStoredAdminUser(normalizedUser);
     void fetch('/api/auth', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'SYNC_SESSION', user: normalizedUser }),
-    }).catch(() => {});
+    })
+      .catch(() => {})
+      .finally(() => {
+        void hydrateFromCloud(true);
+      });
+    // Also kick off cloud hydration immediately using the verified session cookie
+    void hydrateFromCloud(true);
     setSelectedAdminWorkspaceId(resolvedWs);
     setIsUrlGuestSessionCleared(true);
     setPreviewOverrideGuest(null);
@@ -1528,8 +1573,8 @@ function WeddingAppContent() {
             ? {
                 ...matchedCoSuperadmin,
                 role: 'SUPERADMIN',
-                clientId: 'client-demo',
-                clientName: 'Klien Demo • Rayhan & Clarissa',
+                clientId: 'client-utama',
+                clientName: 'Klien Utama • Agung & Selo',
               }
             : {
                 id: 'superadmin-owner',
@@ -1542,8 +1587,8 @@ function WeddingAppContent() {
                     ? 'e98.bisnis@gmail.com'
                     : 'agungkrisdianto98@gmail.com',
                 isDefaultUser: true,
-                clientId: 'client-demo',
-                clientName: 'Klien Demo • Rayhan & Clarissa',
+                clientId: 'client-utama',
+                clientName: 'Klien Utama • Agung & Selo',
               };
           handleLoginSuccess(
             superUser,
@@ -1983,6 +2028,7 @@ function WeddingAppContent() {
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'LOGIN',
@@ -2179,12 +2225,14 @@ function WeddingAppContent() {
     try {
       await fetch('/api/auth', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'LOGOUT' }),
       });
     } catch {
       // Proceed with local cleanup
     }
+    isCloudHydratedRef.current = false;
     appendAuditLog({
       actor: actorName,
       module: 'KEAMANAN',
@@ -4035,6 +4083,13 @@ function WeddingAppContent() {
             }}
             onOpenLandingPage={handleOpenLandingPage}
           />
+        </div>
+      ) : viewMode === 'ADMIN' &&
+        adminUser &&
+        isHydratingCloudAdmin &&
+        !isCloudHydratedRef.current ? (
+        <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
+          <BrandLoader size="lg" />
         </div>
       ) : viewMode === 'ADMIN' && adminUser ? (
         <AdminDashboardView
