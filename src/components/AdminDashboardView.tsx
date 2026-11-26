@@ -27340,7 +27340,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           {[
             {
               id: 'readiness' as AdminModuleTab,
-              label: 'Tracker',
+              label: 'Ringkasan',
               title: 'Ringkasan Kesiapan Acara, Statistik & Aktivitas Terkini',
               icon: LayoutDashboard,
             },
@@ -27368,7 +27368,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             },
             {
               id: 'settings' as AdminModuleTab,
-              label: 'Setelan',
+              label: 'Pengaturan',
               title: 'Pengaturan Konten Undangan, Tema & Latar Video/Foto, Jadwal, dan Database',
               icon: Settings,
             },

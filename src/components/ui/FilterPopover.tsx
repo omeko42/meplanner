@@ -61,6 +61,7 @@ export function FilterPopover({
   className = '',
 }: FilterPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openLeft, setOpenLeft] = useState(align === 'right');
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [activeSubParentValue, setActiveSubParentValue] = useState<string | null>(
     null
@@ -72,6 +73,13 @@ export function FilterPopover({
       setActiveGroupId(null);
       setActiveSubParentValue(null);
       return;
+    }
+    if (typeof window !== 'undefined' && rootRef.current) {
+      const rect = rootRef.current.getBoundingClientRect();
+      const spaceRight = window.innerWidth - rect.left;
+      const spaceLeft = rect.right;
+      // Auto-flip cascade to the left whenever expanding right would clip sub-popovers
+      setOpenLeft(align === 'right' || (spaceRight < 620 && spaceLeft > spaceRight));
     }
     const handleOutside = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
@@ -87,7 +95,7 @@ export function FilterPopover({
       document.removeEventListener('mousedown', handleOutside);
       document.removeEventListener('keydown', handleEsc);
     };
-  }, [isOpen]);
+  }, [isOpen, align]);
 
   const activeFilters = groups
     .map((g) => {
@@ -181,7 +189,7 @@ export function FilterPopover({
         <div
           role="menu"
           className={`absolute top-full mt-1.5 z-50 ${
-            align === 'right' ? 'right-0' : 'left-0'
+            openLeft ? 'right-0 flex-row-reverse' : 'left-0 flex-row'
           } flex items-start`}
         >
           {/* Level 1: Category List */}
@@ -315,7 +323,11 @@ export function FilterPopover({
 
           {/* Level 2: Desktop Cascading Sub-Popover */}
           {activeGroup && (
-            <div className="hidden sm:block ml-1.5 w-56 rounded-2xl bg-white border border-stone-200/90 shadow-lg py-1.5 text-xs max-h-80 overflow-y-auto">
+            <div
+              className={`hidden sm:block ${
+                openLeft ? 'mr-1.5' : 'ml-1.5'
+              } w-56 rounded-2xl bg-white border border-stone-200/90 shadow-lg py-1.5 text-xs max-h-80 overflow-y-auto`}
+            >
               <div className="px-3 py-1.5 border-b border-stone-100 mb-1">
                 <span className="text-[11px] font-bold text-stone-500">
                   {activeGroup.label}
@@ -368,7 +380,11 @@ export function FilterPopover({
 
           {/* Level 3: Desktop Nested Sub-Sub-Popover (when a category has nested children) */}
           {activeGroup && activeSubParent && activeSubParent.children && (
-            <div className="hidden sm:block ml-1.5 w-52 rounded-2xl bg-white border border-stone-200/90 shadow-lg py-1.5 text-xs max-h-80 overflow-y-auto">
+            <div
+              className={`hidden sm:block ${
+                openLeft ? 'mr-1.5' : 'ml-1.5'
+              } w-52 rounded-2xl bg-white border border-stone-200/90 shadow-lg py-1.5 text-xs max-h-80 overflow-y-auto`}
+            >
               <div className="px-3 py-1.5 border-b border-stone-100 mb-1">
                 <span className="text-[11px] font-bold text-stone-500">
                   {activeSubParent.label}
