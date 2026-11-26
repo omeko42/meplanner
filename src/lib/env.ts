@@ -198,8 +198,9 @@ export const isTurnstileEnforced =
 
 export const RESEND_API_KEY = readOptional('RESEND_API_KEY');
 export const EMAIL_FROM =
-  readOptional('EMAIL_FROM') || 'MEPlanner <no-reply@meplanner.id>';
-export const EMAIL_REPLY_TO = readOptional('EMAIL_REPLY_TO');
+  readOptional('EMAIL_FROM') || 'MEPlan <noreply@meplan.biz.id>';
+export const EMAIL_REPLY_TO =
+  readOptional('EMAIL_REPLY_TO') || 'support@meplan.biz.id';
 export const isEmailConfigured = Boolean(RESEND_API_KEY);
 
 /* -------------------------------------------------------------------------- */
@@ -207,7 +208,8 @@ export const isEmailConfigured = Boolean(RESEND_API_KEY);
 /* -------------------------------------------------------------------------- */
 
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'http://localhost:3000'
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  (isProduction ? 'https://meplan.biz.id' : 'http://localhost:3000')
 ).replace(/\/+$/, '');
 
 /**
@@ -220,10 +222,17 @@ export const ALLOWED_ORIGINS: string[] = (
   .map((v) => v.trim().replace(/\/+$/, ''))
   .filter(Boolean);
 
+const BUILTIN_PRODUCTION_ORIGINS = new Set([
+  'https://meplan.biz.id',
+  'https://www.meplan.biz.id',
+  'https://meplanner.vercel.app',
+]);
+
 export function isAllowedOrigin(origin: string | null): boolean {
   if (!origin) return true; // Same-origin / server-to-server requests have no Origin header.
   const clean = origin.replace(/\/+$/, '');
   if (clean === SITE_URL) return true;
+  if (BUILTIN_PRODUCTION_ORIGINS.has(clean)) return true;
   if (ALLOWED_ORIGINS.includes(clean)) return true;
   // Vercel preview deployments of the same project.
   if (clean.endsWith('.vercel.app')) return true;

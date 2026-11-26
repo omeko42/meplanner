@@ -103,10 +103,10 @@ export default function TermsOfServicePage() {
                 Pertanyaan mengenai ketentuan layanan, kerja sama komersial, atau dukungan teknis
                 dapat dikirim ke{' '}
                 <a
-                  href="mailto:e98.bisnis@gmail.com"
+                  href="mailto:support@meplan.biz.id"
                   className="font-bold text-[#8B6914] hover:underline"
                 >
-                  e98.bisnis@gmail.com
+                  support@meplan.biz.id
                 </a>
                 .
               </p>

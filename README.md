@@ -4,13 +4,13 @@
 
 **Multi-Tenant Event Planning Workspace, Guest & RSVP Manager, Budget RAB, and Luxury Digital Invitation Suite**
 
-[![Live App](https://img.shields.io/badge/Live-meplanner.vercel.app-C5A059?style=for-the-badge&logo=vercel&logoColor=white)](https://meplanner.vercel.app)
+[![Live App](https://img.shields.io/badge/Live-meplan.biz.id-C5A059?style=for-the-badge&logo=vercel&logoColor=white)](https://meplan.biz.id)
 [![Next.js](https://img.shields.io/badge/Next.js-14%20App%20Router-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20%26%20RLS-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-Turnstile%20%26%20DNS-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://www.cloudflare.com/)
 
-[Buka Aplikasi](https://meplanner.vercel.app) · [Portal Login](https://meplanner.vercel.app/login) · [Kebijakan Privasi](https://meplanner.vercel.app/privacy) · [Syarat & Ketentuan](https://meplanner.vercel.app/terms) · [Panduan Setup Production](docs/SETUP_PRODUCTION_CLOUDFLARE_RESEND.md)
+[Buka Aplikasi (`meplan.biz.id`)](https://meplan.biz.id) · [Portal Login](https://meplan.biz.id/login) · [Kebijakan Privasi](https://meplan.biz.id/privacy) · [Syarat & Ketentuan](https://meplan.biz.id/terms) · [Panduan Setup Production](docs/SETUP_PRODUCTION_CLOUDFLARE_RESEND.md)
 
 </div>
 

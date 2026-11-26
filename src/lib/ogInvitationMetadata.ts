@@ -12,7 +12,9 @@ import {
   getShowcaseDummyClientState,
 } from '@/data/showcaseDummyClients';
 
-export const SITE_BASE_URL = 'https://meplanner.vercel.app';
+export const SITE_BASE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://meplan.biz.id'
+).replace(/\/+$/, '');
 export const MEPLANNER_BRAND_OG_IMAGE_URL = `${SITE_BASE_URL}/og-meplanner-logo-m-light.jpg`;
 export const FALLBACK_HERO_BANNER_URL = `${SUPABASE_URL}/storage/v1/object/public/wedding/utama/og-undangan-agung-selo.jpg`;
 

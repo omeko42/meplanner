@@ -10,8 +10,12 @@ export const viewport: Viewport = {
   themeColor: '#FAF8F5',
 };
 
+const APP_SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://meplan.biz.id'
+).replace(/\/+$/, '');
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://meplanner.vercel.app'),
+  metadataBase: new URL(APP_SITE_URL),
   title:
     'MEPlanner — My Event Planner & Digital Invitation Suite',
   description:
@@ -29,14 +33,14 @@ export const metadata: Metadata = {
     title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
     description:
       'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
-    url: 'https://meplanner.vercel.app',
+    url: APP_SITE_URL,
     siteName: 'MEPlanner — My Event Planner',
     locale: 'id_ID',
     type: 'website',
     images: [
       {
-        url: 'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
-        secureUrl: 'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
+        url: `${APP_SITE_URL}/og-meplanner-logo-m-light.jpg`,
+        secureUrl: `${APP_SITE_URL}/og-meplanner-logo-m-light.jpg`,
         type: 'image/jpeg',
         width: 800,
         height: 800,
@@ -49,9 +53,7 @@ export const metadata: Metadata = {
     title: 'MEPlanner — My Event Planner & Digital Invitation Suite',
     description:
       'Platform Persiapan Acara, Manajemen Tamu VIP & Undangan Digital Eksklusif (Pernikahan, Ulang Tahun, Wisuda, Rapat & Gala Dinner).',
-    images: [
-      'https://meplanner.vercel.app/og-meplanner-logo-m-light.jpg',
-    ],
+    images: [`${APP_SITE_URL}/og-meplanner-logo-m-light.jpg`],
   },
 };
 
