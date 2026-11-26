@@ -10,6 +10,7 @@ import {
 } from '@/types';
 import { INITIAL_SETTINGS, INITIAL_ADMIN_USERS } from '@/data/seedData';
 import { computeGuestInvitationHash } from '@/lib/guestTokenHash';
+import { resolvePackageCapabilities } from '@/lib/packageCatalog';
 
 export type ShowcasePackageTier =
   | 'STARTER'
@@ -3325,10 +3326,22 @@ export function getShowcaseDummyClientState(
     updatedBy: 'demo_showcase',
   };
 
-  const finalSettings =
+  const finalSettingsBase =
     customThemeId || matchedTheme
       ? applyCatalogThemeToSettings(customSettings, customThemeId || matchedTheme?.id)
       : customSettings;
+  const caps = resolvePackageCapabilities(tier);
+  const finalSettings: WeddingSettings = {
+    ...finalSettingsBase,
+    subscriptionPackageId: caps.tierKey,
+    storageQuotaLimitMb: caps.storageQuotaMb,
+    showGallerySection: true,
+    galleryPhotos:
+      caps.tierKey === 'GRATIS'
+        ? (finalSettingsBase.galleryPhotos || []).slice(0, caps.maxGalleryPhotos)
+        : finalSettingsBase.galleryPhotos,
+  };
+  (finalSettings as unknown as Record<string, unknown>).wevPackageId = caps.tierKey;
 
   const allGuests = buildDummyGuestsForClient(meta);
   const allTasks = buildDummyTasksForClient(meta);
@@ -3340,7 +3353,7 @@ export function getShowcaseDummyClientState(
     tasks: allTasks,
     guests: isStarterTier ? allGuests.slice(0, 4) : allGuests,
     wishes: allWishes,
-    budgetItems: isStarterTier ? [] : allBudget,
+    budgetItems: caps.canUseBudgetPlanner ? allBudget : [],
     adminUsers: INITIAL_ADMIN_USERS,
     lastSyncedAt: '2026-10-24T12:00:00.000Z',
   };

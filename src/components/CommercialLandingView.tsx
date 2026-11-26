@@ -7122,6 +7122,27 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         ? 'Jelajahi Katalog Tema'
                         : 'Explore Theme Catalog'}
                     </button>
+
+                    {onOpenDemoManager && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenDemoManager(
+                            activeDummyMeta.id,
+                            'GRATIS',
+                            activeCatalogTheme?.id
+                          )
+                        }
+                        className="px-5 py-3.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/65 font-extrabold text-sm shadow-2xs transition-all cursor-pointer inline-flex items-center gap-2"
+                      >
+                        <Sparkles className="w-4 h-4 text-[#B68D40]" />
+                        <span>
+                          {lang === 'ID'
+                            ? 'Coba Demo Studio'
+                            : 'Try Interactive Demo'}
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   {/* 3 Authentic MEPlanner Highlights */}

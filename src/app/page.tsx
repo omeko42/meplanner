@@ -2026,6 +2026,14 @@ function WeddingAppContent() {
 
     setIsSubmittingLogin(true);
     try {
+      if (TURNSTILE_PUBLIC_SITE_KEY && !turnstileToken) {
+        setLoginErrorMsg(
+          loginLang === 'EN'
+            ? 'Please complete the Cloudflare Turnstile security check first.'
+            : 'Mohon selesaikan verifikasi keamanan Cloudflare Turnstile terlebih dahulu.'
+        );
+        return;
+      }
       const res = await fetch('/api/auth', {
         method: 'POST',
         credentials: 'include',
@@ -2034,6 +2042,7 @@ function WeddingAppContent() {
           action: 'LOGIN',
           identifier: cleanId,
           password: loginPassword,
+          turnstileToken: turnstileToken || undefined,
         }),
       });
 
@@ -2041,9 +2050,13 @@ function WeddingAppContent() {
       if (res.ok && json.success && json.user) {
         setLoginIdentifier('');
         setLoginPassword('');
+        setTurnstileToken('');
+        setTurnstileResetKey((k) => k + 1);
         handleLoginSuccess(json.user as AdminUser);
         return;
       }
+      setTurnstileToken('');
+      setTurnstileResetKey((k) => k + 1);
 
       // Never allow Superadmin accounts to bypass password verification
       if (!isProtectedSuperadmin && lowerId.endsWith('@gmail.com')) {
@@ -2158,7 +2171,7 @@ function WeddingAppContent() {
     );
   };
 
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginErrorMsg('');
     const rawEmail = gmailAddressInput.trim().toLowerCase();
@@ -2171,20 +2184,70 @@ function WeddingAppContent() {
       );
       return;
     }
+    if (TURNSTILE_PUBLIC_SITE_KEY && !turnstileToken) {
+      setLoginErrorMsg(
+        loginLang === 'ID'
+          ? 'Mohon selesaikan verifikasi keamanan Cloudflare Turnstile terlebih dahulu.'
+          : 'Please complete the Cloudflare Turnstile security check first.'
+      );
+      return;
+    }
     const normalizedEmail = rawEmail.includes('@')
       ? rawEmail
       : `${rawEmail}@gmail.com`;
-    setGmailAddressInput('');
-    setGmailEventTitleInput('');
-    setRegisterPasswordInput('');
-    void handleQuickCreateWithGoogle({
-      email: normalizedEmail,
-      displayName: rawTitle || undefined,
-      eventTitle: rawTitle || undefined,
-      eventType: gmailEventTypeInput,
-      packageId: 'GRATIS',
-      catalogThemeId: demoSelectedThemeId,
-    });
+    setIsSubmittingLogin(true);
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'REGISTER_WORKSPACE',
+          email: normalizedEmail,
+          displayName: rawTitle || undefined,
+          eventType: gmailEventTypeInput,
+          packageId: 'GRATIS',
+          catalogThemeId: demoSelectedThemeId,
+          turnstileToken: turnstileToken || undefined,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && json.success) {
+        setGmailAddressInput('');
+        setGmailEventTitleInput('');
+        setRegisterPasswordInput('');
+        setPendingVerificationEmail(normalizedEmail);
+        setTurnstileToken('');
+        setTurnstileResetKey((k) => k + 1);
+        return;
+      }
+      setTurnstileToken('');
+      setTurnstileResetKey((k) => k + 1);
+      if (json.code === 'ACCOUNT_EXISTS') {
+        setAuthModalMode('SIGN_IN');
+        setLoginIdentifier(normalizedEmail);
+        setLoginErrorMsg(
+          loginLang === 'EN'
+            ? 'This email is already registered. Please sign in.'
+            : 'Email ini sudah terdaftar. Silakan masuk dengan kata sandi Anda.'
+        );
+        return;
+      }
+      setLoginErrorMsg(
+        json.error ||
+          (loginLang === 'EN'
+            ? 'Registration failed. Please try again.'
+            : 'Pendaftaran gagal. Silakan coba lagi.')
+      );
+    } catch {
+      setLoginErrorMsg(
+        loginLang === 'EN'
+          ? 'Network error. Please try again.'
+          : 'Terjadi kesalahan jaringan. Silakan coba lagi.'
+      );
+    } finally {
+      setIsSubmittingLogin(false);
+    }
   };
 
   const handleSyncStateAndUser = (
@@ -2583,6 +2646,7 @@ function WeddingAppContent() {
     matchedGuestRecordName?: string;
     userAgent?: string;
     devicePlatform?: string;
+    turnstileToken?: string;
   }) => {
     const cleanName = payload.guestName.trim() || 'Tamu Kehormatan';
     const submittedPax = Math.max(0, Number(payload.pax) || 0);
@@ -3806,25 +3870,77 @@ function WeddingAppContent() {
         </button>
       </div>
 
-      <div className="inline-flex items-center rounded-xl bg-stone-950/90 p-0.5 border border-stone-800">
-        {(['STARTER', 'EXCLUSIVE', 'ROYAL VIP'] as ShowcasePackageTier[]).map(
-          (tierOpt) => (
+      <div className="inline-flex items-center rounded-xl bg-stone-950/90 p-0.5 border border-stone-800 overflow-x-auto max-w-[68vw] sm:max-w-none">
+        {(
+          [
+            { id: 'GRATIS', label: 'Gratis' },
+            { id: 'PREMIUM', label: 'Premium' },
+            { id: 'BUSINESS', label: 'Business' },
+            { id: 'ENTERPRISE', label: 'Enterprise' },
+            { id: 'MITRA_SILVER', label: 'Silver' },
+            { id: 'MITRA_GOLD', label: 'Gold' },
+          ] as Array<{ id: ShowcasePackageTier; label: string }>
+        ).map((tierOpt) => {
+          const isSelected =
+            demoPackageTier === tierOpt.id ||
+            (demoPackageTier === 'STARTER' && tierOpt.id === 'GRATIS') ||
+            (demoPackageTier === 'EXCLUSIVE' && tierOpt.id === 'BUSINESS') ||
+            (demoPackageTier === 'ROYAL VIP' && tierOpt.id === 'ENTERPRISE');
+          return (
             <button
-              key={tierOpt}
+              key={tierOpt.id}
               type="button"
-              onClick={() => setDemoPackageTier(tierOpt)}
-              className={`px-1.5 sm:px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-extrabold transition-all whitespace-nowrap ${
-                demoPackageTier === tierOpt
+              onClick={() => {
+                setDemoPackageTier(tierOpt.id);
+                if (activeDummyClientIdForSandbox) {
+                  setDemoCustomOverrides((prev) => {
+                    const current = prev[activeDummyClientIdForSandbox];
+                    if (!current?.settings) return prev;
+                    const cleanedSettings = {
+                      ...current.settings,
+                      subscriptionPackageId: tierOpt.id,
+                    } as WeddingSettings;
+                    delete (cleanedSettings as unknown as Record<string, unknown>)
+                      .wevPackageId;
+                    return {
+                      ...prev,
+                      [activeDummyClientIdForSandbox]: {
+                        ...current,
+                        settings: cleanedSettings,
+                      },
+                    };
+                  });
+                }
+              }}
+              className={`px-1.5 sm:px-2 py-1 rounded-lg text-[9px] sm:text-[10px] font-extrabold transition-all whitespace-nowrap cursor-pointer ${
+                isSelected
                   ? 'bg-amber-500/25 text-[#F6E27A] border border-[#D4AF37]/60'
                   : 'text-stone-400 hover:text-stone-200'
               }`}
-              title={`Simulasikan Paket ${tierOpt}`}
+              title={`Simulasikan Paket ${tierOpt.label}`}
             >
-              {tierOpt === 'ROYAL VIP' ? 'VIP' : tierOpt}
+              {tierOpt.label}
             </button>
-          )
-        )}
+          );
+        })}
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          if (activeDummyClientIdForSandbox) {
+            setDemoCustomOverrides((prev) => {
+              const next = { ...prev };
+              delete next[activeDummyClientIdForSandbox];
+              return next;
+            });
+          }
+        }}
+        className="px-2 py-1 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white border border-stone-700 text-[9px] sm:text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer"
+        title="Reset semua perubahan di sesi Demo ini"
+      >
+        Reset
+      </button>
     </div>
   ) : null;
 
@@ -4396,6 +4512,19 @@ function WeddingAppContent() {
                       </div>
                     </div>
 
+                    {TURNSTILE_PUBLIC_SITE_KEY && (
+                      <div className="pt-0.5">
+                        <TurnstileWidget
+                          siteKey={TURNSTILE_PUBLIC_SITE_KEY}
+                          action="login"
+                          onToken={setTurnstileToken}
+                          onError={() => setTurnstileToken('')}
+                          resetKey={turnstileResetKey}
+                          theme="light"
+                        />
+                      </div>
+                    )}
+
                     <button
                       type="submit"
                       disabled={isSubmittingLogin}
@@ -4883,13 +5012,50 @@ function WeddingAppContent() {
                       )}
                     </div>
 
+                    {TURNSTILE_PUBLIC_SITE_KEY && (
+                      <div className="pt-0.5">
+                        <TurnstileWidget
+                          siteKey={TURNSTILE_PUBLIC_SITE_KEY}
+                          action="register"
+                          onToken={setTurnstileToken}
+                          onError={() => setTurnstileToken('')}
+                          resetKey={turnstileResetKey}
+                          theme="light"
+                        />
+                      </div>
+                    )}
+
+                    {pendingVerificationEmail && (
+                      <div
+                        role="status"
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs leading-relaxed text-emerald-900"
+                      >
+                        {loginLang === 'EN' ? (
+                          <>
+                            <strong>Verification sent.</strong> Check{' '}
+                            <strong>{pendingVerificationEmail}</strong> to activate your workspace.
+                          </>
+                        ) : (
+                          <>
+                            <strong>Link verifikasi terkirim!</strong> Cek email{' '}
+                            <strong>{pendingVerificationEmail}</strong> untuk mengaktifkan workspace Anda.
+                          </>
+                        )}
+                      </div>
+                    )}
+
                     <button
                       type="submit"
-                      className="w-full h-11 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-950 text-white font-bold text-sm transition-all shadow-md cursor-pointer"
+                      disabled={isSubmittingLogin}
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 hover:from-stone-800 hover:to-stone-950 text-white font-bold text-sm transition-all shadow-md cursor-pointer disabled:opacity-60"
                     >
-                      {loginLang === 'ID'
-                        ? 'Buat Akun Gratis & Masuk ke Studio'
-                        : 'Create Free Account & Enter Studio'}
+                      {isSubmittingLogin
+                        ? loginLang === 'ID'
+                          ? 'Mengirim Verifikasi...'
+                          : 'Sending Verification...'
+                        : loginLang === 'ID'
+                          ? 'Daftar Gratis & Kirim Verifikasi'
+                          : 'Create Free Account & Verify'}
                     </button>
                   </form>
 

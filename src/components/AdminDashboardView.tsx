@@ -83,6 +83,7 @@ import {
   exportGuestsToExcel,
   exportGuestsToPdf,
 } from '@/lib/exportReports';
+import { resolvePackageCapabilities } from '@/lib/packageCatalog';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -561,8 +562,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     lowerAdminUsername === 'e98.bisnis@gmail.com' ||
     lowerAdminEmail === 'agungkrisdianto98@gmail.com' ||
     lowerAdminEmail === 'e98.bisnis@gmail.com';
+  const isDemoSandbox =
+    String(adminUser.id || '').startsWith('demo_mgr_') ||
+    lowerAdminUsername.startsWith('demo_');
   const userClientId =
-    adminUser.clientId || (isSuperadmin ? 'client-demo' : 'client-utama');
+    adminUser.clientId || 'client-utama';
   const [activeTab, setActiveTabState] = useState<AdminModuleTab>(() => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem('my_wedding_admin_active_tab_v2');
@@ -2618,93 +2622,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const activePackageInfo = useMemo(() => {
     const rawTier = String(
-      (settingsForm as any).wevPackageId ||
+      settingsForm.subscriptionPackageId ||
+        state.settings.subscriptionPackageId ||
+        (settingsForm as any).wevPackageId ||
         (state.settings as any).wevPackageId ||
         (activeClientGroup as any)?.wevPackageId ||
         activeClientGroup?.packageTier ||
         (settingsForm as any).packageTier ||
         (state.settings as any).packageTier ||
         'EXCLUSIVE'
-    )
-      .trim()
-      .toUpperCase()
-      .replace(/[\s-]+/g, '_');
-
-    if (
-      rawTier === 'GRATIS' ||
-      rawTier === 'STARTER' ||
-      rawTier === 'FREE' ||
-      rawTier === 'TRIAL'
-    ) {
-      return {
-        tierKey: 'GRATIS' as const,
-        packageName: 'Paket Gratis',
-        maxInvitations: 1,
-        maxGuests: 30,
-        maxGalleryPhotos: 4,
-        activePeriodLabel: 'Uji Coba Gratis • Aktif 14 Hari',
-        hasWhiteLabelText: false,
-        hasWhiteLabelLogo: false,
-      };
-    }
-    if (rawTier === 'PREMIUM') {
-      return {
-        tierKey: 'PREMIUM' as const,
-        packageName: 'Paket Premium',
-        maxInvitations: 1,
-        maxGuests: Infinity,
-        maxGalleryPhotos: Infinity,
-        activePeriodLabel: 'Aktif Selamanya (1 Undangan Premium)',
-        hasWhiteLabelText: false,
-        hasWhiteLabelLogo: false,
-      };
-    }
-    if (rawTier === 'MITRA_SILVER' || rawTier === 'SILVER') {
-      return {
-        tierKey: 'MITRA_SILVER' as const,
-        packageName: 'Paket Mitra Silver',
-        maxInvitations: 11,
-        maxGuests: Infinity,
-        maxGalleryPhotos: Infinity,
-        activePeriodLabel: 'Aktif Selamanya (Kuota 11 Undangan WO/EO)',
-        hasWhiteLabelText: true,
-        hasWhiteLabelLogo: false,
-      };
-    }
-    if (rawTier === 'MITRA_GOLD' || rawTier === 'GOLD') {
-      return {
-        tierKey: 'MITRA_GOLD' as const,
-        packageName: 'Paket Mitra Gold',
-        maxInvitations: 23,
-        maxGuests: Infinity,
-        maxGalleryPhotos: Infinity,
-        activePeriodLabel: 'Aktif Selamanya (Kuota 23 Undangan Agensi VIP)',
-        hasWhiteLabelText: true,
-        hasWhiteLabelLogo: true,
-      };
-    }
-    if (rawTier === 'ENTERPRISE' || rawTier === 'ROYAL_VIP') {
-      return {
-        tierKey: 'ENTERPRISE' as const,
-        packageName: 'Paket Enterprise',
-        maxInvitations: 5,
-        maxGuests: Infinity,
-        maxGalleryPhotos: Infinity,
-        activePeriodLabel: 'Aktif Selamanya (Kuota 5 Undangan Premium)',
-        hasWhiteLabelText: false,
-        hasWhiteLabelLogo: false,
-      };
-    }
-    return {
-      tierKey: 'BUSINESS' as const,
-      packageName: 'Paket Business',
-      maxInvitations: 2,
-      maxGuests: Infinity,
-      maxGalleryPhotos: Infinity,
-      activePeriodLabel: 'Aktif Selamanya (Kuota 2 Undangan Premium)',
-      hasWhiteLabelText: false,
-      hasWhiteLabelLogo: false,
-    };
+    );
+    return resolvePackageCapabilities(rawTier);
   }, [settingsForm, state.settings, activeClientGroup]);
 
   const ownedClientWorkspaces = useMemo(() => {
@@ -5455,6 +5383,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
   const handleUpsertPanitiaForm = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSuperadmin && !activePackageInfo.canManagePanitia) {
+      showToast(
+        '🔒 Fitur Multi-Akses Tim Panitia (RBAC) tersedia mulai Paket Enterprise. Silakan upgrade paket Anda!'
+      );
+      setActiveTab('settings');
+      setSettingsMenuTab('paket');
+      return;
+    }
     setIsSavingPanitia(true);
     try {
       const targetGroup = effectiveClientGroups.find(
@@ -7771,6 +7707,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             MODUL 3: ANGGARAN, REVISI BUDGET & VENDOR (LINKEDIN SECTION CARD STYLE)
            ===================================================================== */}
         {activeTab === 'budget' && !isPanitia && (
+          !isSuperadmin && !activePackageInfo.canUseBudgetPlanner ? (
+            <div className="bg-white rounded-3xl border border-[#D4AF37]/45 p-6 sm:p-8 text-center max-w-2xl mx-auto shadow-sm space-y-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#FAF3E3] border border-[#D4AF37]/45 text-[#8B6914] flex items-center justify-center mx-auto">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF3E3] border border-[#D4AF37]/40 text-[#8B6914] text-[11px] font-extrabold uppercase tracking-wider">
+                  Paket Aktif: {activePackageInfo.packageName}
+                </span>
+                <h3 className="text-lg sm:text-xl font-extrabold text-stone-900">
+                  Modul Anggaran Moneter &amp; Vendor Tracker
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-lg mx-auto">
+                  Kelola Target Pagu, perbandingan Estimasi vs Realisasi, status DP/Lunas tiap vendor, serta ekspor laporan keuangan PDF &amp; Excel (.xlsx) mulai dari <strong>Paket Business (Rp 74.250 • Aktif Selamanya)</strong>.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-left text-xs">
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200">
+                  <p className="font-extrabold text-stone-900">Pagu &amp; Realisasi</p>
+                  <p className="text-stone-500 mt-0.5">Pantau sisa kas dan selisih revisi vendor otomatis.</p>
+                </div>
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200">
+                  <p className="font-extrabold text-stone-900">Status DP / Lunas</p>
+                  <p className="text-stone-500 mt-0.5">Jadwal jatuh tempo &amp; progres pelunasan real-time.</p>
+                </div>
+                <div className="p-3 rounded-xl bg-[#FAF8F5] border border-stone-200">
+                  <p className="font-extrabold text-stone-900">Ekspor PDF &amp; Excel</p>
+                  <p className="text-stone-500 mt-0.5">Unduh laporan RAB siap cetak untuk keluarga &amp; WO.</p>
+                </div>
+              </div>
+              <div className="pt-1 flex flex-wrap items-center justify-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('settings');
+                    setSettingsMenuTab('paket');
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:opacity-95 text-white font-extrabold text-xs sm:text-sm shadow-sm cursor-pointer"
+                >
+                  Upgrade ke Paket Business &rarr;
+                </button>
+              </div>
+            </div>
+          ) : (
           <div className="space-y-4">
             {/* 4 Symmetrical Financial Cards (2x2 Grid on Mobile, 4 Columns on Desktop) */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 items-stretch">
@@ -8077,6 +8057,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
               )}
             </div>
           </div>
+          )
         )}
 
         {/* =====================================================================
@@ -8196,6 +8177,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <button
                     type="button"
                     onClick={() => {
+                      if (!isSuperadmin && !activePackageInfo.canUseGuestReception) {
+                        showToast(
+                          '🔒 Layar Penerima Tamu (Guest Reception Hari-H) tersedia mulai Paket Premium. Silakan upgrade paket Anda!'
+                        );
+                        setActiveTab('settings');
+                        setSettingsMenuTab('paket');
+                        return;
+                      }
                       setCheckedInGuest(null);
                       setReceptionSearchInput('');
                       setIsGuestReceptionModalOpen(true);
@@ -8203,13 +8192,23 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     title="Buka Layar Penerima Tamu (Guest Reception Check-In Hari-H)"
                     className="col-span-2 sm:col-span-1 px-3 sm:px-3.5 py-2 sm:py-1.5 rounded-full text-xs font-extrabold border border-[#D4AF37]/55 bg-gradient-to-r from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] hover:from-[#FAF3E3] hover:to-[#EFE1C1] text-[#8B6914] shadow-2xs text-center transition-all cursor-pointer"
                   >
-                    🖥️ Layar Penerima Tamu (Hari-H)
+                    {!isSuperadmin && !activePackageInfo.canUseGuestReception
+                      ? '🔒 Layar Penerima Tamu (Premium)'
+                      : '🖥️ Layar Penerima Tamu (Hari-H)'}
                   </button>
                   {state.guests.length > 0 && (
                     <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
+                          if (!isSuperadmin && !activePackageInfo.canExportReports) {
+                            showToast(
+                              '🔒 Ekspor Excel (.xlsx) tersedia mulai Paket Business. Silakan upgrade paket Anda!'
+                            );
+                            setActiveTab('settings');
+                            setSettingsMenuTab('paket');
+                            return;
+                          }
                           exportGuestsToExcel(state.guests, state.settings);
                           showToast('✓ Daftar Tamu Excel (.xlsx) berhasil diunduh!');
                         }}
@@ -8217,11 +8216,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         title="Unduh Daftar Tamu format Excel (.xlsx)"
                       >
                         <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                        <span>Excel</span>
+                        <span>{!isSuperadmin && !activePackageInfo.canExportReports ? '🔒 Excel' : 'Excel'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => {
+                          if (!isSuperadmin && !activePackageInfo.canExportReports) {
+                            showToast(
+                              '🔒 Ekspor Buku Tamu PDF tersedia mulai Paket Business. Silakan upgrade paket Anda!'
+                            );
+                            setActiveTab('settings');
+                            setSettingsMenuTab('paket');
+                            return;
+                          }
                           exportGuestsToPdf(state.guests, state.settings);
                           showToast('✓ Buku Tamu PDF berhasil diunduh!');
                         }}
@@ -8229,7 +8236,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         title="Unduh Buku Tamu & Daftar RSVP format PDF"
                       >
                         <Download className="w-3.5 h-3.5 text-rose-700 shrink-0" />
-                        <span>PDF</span>
+                        <span>{!isSuperadmin && !activePackageInfo.canExportReports ? '🔒 PDF' : 'PDF'}</span>
                       </button>
                     </div>
                   )}
@@ -16984,35 +16991,70 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                             </div>
 
                             <div className="pt-2 flex flex-wrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  const nextSettings: WeddingSettings = {
-                                    ...state.settings,
-                                    ...settingsForm,
-                                    updatedBy: adminUser.username,
-                                  };
-                                  (nextSettings as any).wevPackageId =
-                                    pkg.tierKey;
-                                  setSettingsFormInternal(nextSettings);
-                                  await commitImmediateSettings(nextSettings);
-                                  showToast(
-                                    `✓ Paket "${pkg.name}" berhasil diterapkan ke sistem & kuota workspace!`
-                                  );
-                                }}
-                                className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
-                                  isCurrentTier
-                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                    : pkg.popular
-                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                              {isSuperadmin || isDemoSandbox ? (
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const nextSettings: WeddingSettings = {
+                                      ...state.settings,
+                                      ...settingsForm,
+                                      subscriptionPackageId: pkg.tierKey,
+                                      updatedBy: adminUser.username,
+                                    };
+                                    (nextSettings as any).wevPackageId =
+                                      pkg.tierKey;
+                                    setSettingsFormInternal(nextSettings);
+                                    await commitImmediateSettings(nextSettings);
+                                    showToast(
+                                      isDemoSandbox
+                                        ? `✓ Simulasi Demo beralih ke Paket "${pkg.name}" — coba fitur & kuotanya sekarang!`
+                                        : `✓ Paket "${pkg.name}" berhasil diterapkan ke sistem & kuota workspace!`
+                                    );
+                                  }}
+                                  className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                                    isCurrentTier
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                      : pkg.popular
+                                        ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs'
+                                        : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50'
+                                  }`}
+                                >
+                                  {isCurrentTier
+                                    ? `✓ Aktif (${pkg.name})`
+                                    : isDemoSandbox
+                                      ? `Simulasikan ${pkg.name}`
+                                      : `Terapkan Paket ${pkg.name}`}
+                                </button>
+                              ) : isCurrentTier ? (
+                                <div className="flex-1 py-2 px-3 rounded-xl font-extrabold text-xs text-center bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                  ✓ Paket Aktif Anda ({pkg.name})
+                                </div>
+                              ) : pkg.tierKey === 'GRATIS' ? (
+                                <div className="flex-1 py-2 px-3 rounded-xl font-bold text-xs text-center bg-stone-100 text-stone-500 border border-stone-200">
+                                  Termasuk di Paket Anda
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (onOpenLandingPage) {
+                                      onOpenLandingPage();
+                                    } else {
+                                      showToast(
+                                        `Hubungi Admin / buka halaman Checkout MEPlan untuk mengaktifkan ${pkg.name} (${pkg.price}).`
+                                      );
+                                    }
+                                  }}
+                                  className={`flex-1 py-2 px-3 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+                                    pkg.popular
+                                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-xs hover:opacity-95'
                                       : 'bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/50'
-                                }`}
-                              >
-                                {isCurrentTier
-                                  ? `✓ Aktif (${pkg.name})`
-                                  : `Terapkan Paket ${pkg.name}`}
-                              </button>
-                              {onOpenLandingPage && (
+                                  }`}
+                                >
+                                  Upgrade ke {pkg.name} ({pkg.price}) &rarr;
+                                </button>
+                              )}
+                              {(isSuperadmin || isDemoSandbox) && onOpenLandingPage && (
                                 <button
                                   type="button"
                                   onClick={onOpenLandingPage}

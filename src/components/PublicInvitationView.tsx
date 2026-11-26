@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import TurnstileWidget from '@/components/TurnstileWidget';
+import { TURNSTILE_PUBLIC_SITE_KEY } from '@/lib/turnstileClient';
 import {
   Heart,
   Calendar,
@@ -103,6 +105,7 @@ interface PublicInvitationViewProps {
     matchedGuestRecordName?: string;
     userAgent?: string;
     devicePlatform?: string;
+    turnstileToken?: string;
   }) => Promise<void>;
   onCheckInGuest?: (payload: {
     guestId?: string;
@@ -2750,6 +2753,9 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [rsvpMessage, setRsvpMessage] = useState('');
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [rsvpSubmittedSuccess, setRsvpSubmittedSuccess] = useState(false);
+  const [rsvpTurnstileToken, setRsvpTurnstileToken] = useState('');
+  const [rsvpTurnstileResetKey, setRsvpTurnstileResetKey] = useState(0);
+  const [rsvpTurnstileError, setRsvpTurnstileError] = useState('');
 
   // Interactive 2-Step Digital Envelope / Gift Proceed Modal State
   const [activeGiftProceedModal, setActiveGiftProceedModal] = useState<{
@@ -3929,6 +3935,15 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
     e.preventDefault();
     if (settings.disableRsvpSubmission) return;
     if (!rsvpName.trim()) return;
+    if (TURNSTILE_PUBLIC_SITE_KEY && !rsvpTurnstileToken) {
+      setRsvpTurnstileError(
+        lang === 'ID'
+          ? 'Mohon selesaikan verifikasi keamanan Cloudflare Turnstile terlebih dahulu.'
+          : 'Please complete the Cloudflare Turnstile security check first.'
+      );
+      return;
+    }
+    setRsvpTurnstileError('');
     setIsSubmittingRsvp(true);
     try {
       const ua =
@@ -3966,9 +3981,12 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
           undefined,
         userAgent: ua,
         devicePlatform: devPlatform,
+        turnstileToken: rsvpTurnstileToken || undefined,
       });
       setRsvpSubmittedSuccess(true);
       setRsvpMessage('');
+      setRsvpTurnstileToken('');
+      setRsvpTurnstileResetKey((k) => k + 1);
     } finally {
       setIsSubmittingRsvp(false);
     }
@@ -7090,7 +7108,27 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 mt-auto">
+              <div className="pt-4 mt-auto space-y-3">
+                {TURNSTILE_PUBLIC_SITE_KEY && !settings.disableRsvpSubmission && (
+                  <div className="space-y-1.5">
+                    <TurnstileWidget
+                      siteKey={TURNSTILE_PUBLIC_SITE_KEY}
+                      action="public_form"
+                      onToken={(tok) => {
+                        setRsvpTurnstileToken(tok);
+                        if (tok) setRsvpTurnstileError('');
+                      }}
+                      onError={() => setRsvpTurnstileToken('')}
+                      resetKey={rsvpTurnstileResetKey}
+                      theme="light"
+                    />
+                    {rsvpTurnstileError && (
+                      <p className="text-[11px] font-semibold text-rose-600">
+                        {rsvpTurnstileError}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <button
                   type="submit"
                   disabled={isSubmittingRsvp || Boolean(settings.disableRsvpSubmission)}

@@ -421,6 +421,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify Cloudflare Turnstile on credential logins when configured
+    const loginCaptcha = await verifyTurnstileToken(body.turnstileToken, {
+      expectedAction: 'login',
+      remoteIp: resolveClientIp(request.headers),
+    });
+    if (!loginCaptcha.success) {
+      return apiError(
+        loginCaptcha.skipped
+          ? 'Verifikasi keamanan sedang tidak tersedia. Coba lagi nanti.'
+          : 'Verifikasi keamanan Cloudflare Turnstile gagal. Silakan centang ulang lalu coba lagi.',
+        403,
+        { code: 'CAPTCHA_FAILED' }
+      );
+    }
+
     const authenticatedUser = authenticateAdminCredentials(identifier, password);
     if (!authenticatedUser) {
       recordFailedAttempt(rateKey);

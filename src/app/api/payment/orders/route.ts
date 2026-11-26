@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { apiError, rejectDisallowedOrigin } from '@/lib/apiGuard';
+import { apiError, rateLimitByIp, rejectDisallowedOrigin } from '@/lib/apiGuard';
 import { PACKAGE_CATALOG } from '@/lib/packageCatalog';
+import { verifyTurnstileToken } from '@/lib/turnstile';
+import { resolveClientIp } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +36,37 @@ export async function POST(req: NextRequest) {
     const originGuard = rejectDisallowedOrigin(req);
     if (originGuard) return originGuard;
 
+    const limit = rateLimitByIp(req, 'payment:orders', {
+      limit: 12,
+      windowMs: 10 * 60 * 1000,
+    });
+    if (!limit.allowed) {
+      return apiError(
+        `Terlalu banyak permintaan checkout. Coba lagi dalam ${limit.retryAfterSeconds} detik.`,
+        429,
+        {
+          code: 'RATE_LIMITED',
+          headers: { 'Retry-After': String(limit.retryAfterSeconds) },
+        }
+      );
+    }
+
     const body = await req.json().catch(() => null);
+
+    // Anti-bot guard for public checkout order creation when Turnstile is active
+    const captcha = await verifyTurnstileToken(body?.turnstileToken, {
+      expectedAction: 'checkout',
+      remoteIp: resolveClientIp(req.headers),
+    });
+    if (!captcha.success) {
+      return apiError(
+        captcha.skipped
+          ? 'Verifikasi keamanan sedang tidak tersedia. Coba lagi nanti.'
+          : 'Verifikasi keamanan Cloudflare Turnstile gagal. Silakan coba lagi.',
+        403,
+        { code: 'CAPTCHA_FAILED' }
+      );
+    }
     const packageId = String(body?.packageId || '').trim().toUpperCase();
     const buyerEmail = String(body?.buyerEmail || '').trim().toLowerCase();
     const buyerCoupleName = String(body?.buyerCoupleName || '').trim();

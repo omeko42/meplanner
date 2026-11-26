@@ -93,6 +93,174 @@ export const PACKAGE_CATALOG: CatalogPackage[] = [
 
 const CATALOG_BY_ID = new Map(PACKAGE_CATALOG.map((p) => [p.id, p]));
 
+export type PackageTierKey =
+  | 'GRATIS'
+  | 'PREMIUM'
+  | 'BUSINESS'
+  | 'ENTERPRISE'
+  | 'MITRA_SILVER'
+  | 'MITRA_GOLD';
+
+export interface PackageCapabilities {
+  tierKey: PackageTierKey;
+  rank: number;
+  packageName: string;
+  priceLabel: string;
+  maxInvitations: number;
+  maxGuests: number;
+  maxGalleryPhotos: number;
+  storageQuotaMb: number;
+  activePeriodLabel: string;
+  canUsePremiumThemes: boolean;
+  canUseGuestReception: boolean;
+  canUseBudgetPlanner: boolean;
+  canExportReports: boolean;
+  canManagePanitia: boolean;
+  hasWhiteLabelText: boolean;
+  hasWhiteLabelLogo: boolean;
+}
+
+/**
+ * Single authoritative capability resolver for all 6 commercial tiers
+ * (Gratis -> Premium -> Business -> Enterprise -> Mitra Silver -> Mitra Gold).
+ * Handles legacy tier aliases (`STARTER`, `EXCLUSIVE`, `ROYAL_VIP`) cleanly.
+ */
+export function resolvePackageCapabilities(rawInput?: string | null): PackageCapabilities {
+  const rawTier = String(rawInput || 'GRATIS')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+
+  if (
+    rawTier === 'GRATIS' ||
+    rawTier === 'STARTER' ||
+    rawTier === 'FREE' ||
+    rawTier === 'TRIAL'
+  ) {
+    return {
+      tierKey: 'GRATIS',
+      rank: 0,
+      packageName: 'Paket Gratis',
+      priceLabel: 'Rp 0',
+      maxInvitations: 1,
+      maxGuests: 30,
+      maxGalleryPhotos: 4,
+      storageQuotaMb: 50,
+      activePeriodLabel: 'Uji Coba Gratis • Aktif 14 Hari',
+      canUsePremiumThemes: false,
+      canUseGuestReception: false,
+      canUseBudgetPlanner: false,
+      canExportReports: false,
+      canManagePanitia: false,
+      hasWhiteLabelText: false,
+      hasWhiteLabelLogo: false,
+    };
+  }
+
+  if (rawTier === 'PREMIUM') {
+    return {
+      tierKey: 'PREMIUM',
+      rank: 1,
+      packageName: 'Paket Premium',
+      priceLabel: 'Rp 51.750',
+      maxInvitations: 1,
+      maxGuests: Infinity,
+      maxGalleryPhotos: Infinity,
+      storageQuotaMb: 250,
+      activePeriodLabel: 'Aktif Selamanya (1 Undangan Premium)',
+      canUsePremiumThemes: true,
+      canUseGuestReception: true,
+      canUseBudgetPlanner: false,
+      canExportReports: false,
+      canManagePanitia: false,
+      hasWhiteLabelText: false,
+      hasWhiteLabelLogo: false,
+    };
+  }
+
+  if (rawTier === 'MITRA_SILVER' || rawTier === 'SILVER') {
+    return {
+      tierKey: 'MITRA_SILVER',
+      rank: 4,
+      packageName: 'Paket Mitra Silver',
+      priceLabel: 'Rp 375.000',
+      maxInvitations: 11,
+      maxGuests: Infinity,
+      maxGalleryPhotos: Infinity,
+      storageQuotaMb: 2048,
+      activePeriodLabel: 'Aktif Selamanya (Kuota 11 Undangan WO/EO)',
+      canUsePremiumThemes: true,
+      canUseGuestReception: true,
+      canUseBudgetPlanner: true,
+      canExportReports: true,
+      canManagePanitia: true,
+      hasWhiteLabelText: true,
+      hasWhiteLabelLogo: false,
+    };
+  }
+
+  if (rawTier === 'MITRA_GOLD' || rawTier === 'GOLD') {
+    return {
+      tierKey: 'MITRA_GOLD',
+      rank: 5,
+      packageName: 'Paket Mitra Gold',
+      priceLabel: 'Rp 750.000',
+      maxInvitations: 23,
+      maxGuests: Infinity,
+      maxGalleryPhotos: Infinity,
+      storageQuotaMb: 5120,
+      activePeriodLabel: 'Aktif Selamanya (Kuota 23 Undangan Agensi VIP)',
+      canUsePremiumThemes: true,
+      canUseGuestReception: true,
+      canUseBudgetPlanner: true,
+      canExportReports: true,
+      canManagePanitia: true,
+      hasWhiteLabelText: true,
+      hasWhiteLabelLogo: true,
+    };
+  }
+
+  if (rawTier === 'ENTERPRISE' || rawTier === 'ROYAL_VIP') {
+    return {
+      tierKey: 'ENTERPRISE',
+      rank: 3,
+      packageName: 'Paket Enterprise',
+      priceLabel: 'Rp 180.000',
+      maxInvitations: 5,
+      maxGuests: Infinity,
+      maxGalleryPhotos: Infinity,
+      storageQuotaMb: 1024,
+      activePeriodLabel: 'Aktif Selamanya (Kuota 5 Undangan Premium)',
+      canUsePremiumThemes: true,
+      canUseGuestReception: true,
+      canUseBudgetPlanner: true,
+      canExportReports: true,
+      canManagePanitia: true,
+      hasWhiteLabelText: false,
+      hasWhiteLabelLogo: false,
+    };
+  }
+
+  return {
+    tierKey: 'BUSINESS',
+    rank: 2,
+    packageName: 'Paket Business',
+    priceLabel: 'Rp 74.250',
+    maxInvitations: 2,
+    maxGuests: Infinity,
+    maxGalleryPhotos: Infinity,
+    storageQuotaMb: 500,
+    activePeriodLabel: 'Aktif Selamanya (Kuota 2 Undangan Premium)',
+    canUsePremiumThemes: true,
+    canUseGuestReception: true,
+    canUseBudgetPlanner: true,
+    canExportReports: true,
+    canManagePanitia: false,
+    hasWhiteLabelText: false,
+    hasWhiteLabelLogo: false,
+  };
+}
+
 export function getCatalogPackage(id: string): CatalogPackage | undefined {
   return CATALOG_BY_ID.get((id || '').trim().toUpperCase());
 }

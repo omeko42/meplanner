@@ -148,10 +148,6 @@ export default function TurnstileWidget({
 
   useEffect(() => {
     if (!siteKey) {
-      setFailed(
-        'Verifikasi keamanan belum dikonfigurasi. Hubungi administrator.'
-      );
-      onErrorRef.current?.('Turnstile site key belum dikonfigurasi.');
       return;
     }
 
@@ -188,6 +184,12 @@ export default function TurnstileWidget({
     if (!ready || resetKey === undefined) return;
     render();
   }, [resetKey, ready, render]);
+
+  // When NEXT_PUBLIC_TURNSTILE_SITE_KEY is not yet configured in the environment,
+  // render nothing so forms remain clean until Cloudflare Turnstile keys are added.
+  if (!siteKey) {
+    return null;
+  }
 
   if (failed && !ready) {
     return (
