@@ -834,8 +834,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [editingGuest, setEditingGuest] = useState<Partial<WeddingGuest> | null>(null);
   const [waPreviewGuest, setWaPreviewGuest] = useState<WeddingGuest | null>(null);
   const [waModalMode, setWaModalMode] = useState<'preview' | 'global'>('preview');
-  const [waCustomMessage, setWaCustomMessage] = useState<string>('');
-  const [waGlobalTab, setWaGlobalTab] = useState<'vip' | 'regular'>('vip');
+  const [waCustomMessage, setWaCustomMessage] = useState<string | null>(null);
+  const [waGlobalTab, setWaGlobalTab] = useState<'vip' | 'regular'>('regular');
   const [waTemplateVipDraft, setWaTemplateVipDraft] = useState<string>(
     state.settings.waTemplateVip || DEFAULT_WA_TEMPLATE_VIP
   );
@@ -843,6 +843,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     state.settings.waTemplateRegular || DEFAULT_WA_TEMPLATE_REGULAR
   );
   const [isWaGlobalModalOpen, setIsWaGlobalModalOpen] = useState(false);
+
+  // Keep draft editors synced whenever saved cloud settings change while modal is closed
+  useEffect(() => {
+    if (isWaGlobalModalOpen || waPreviewGuest) return;
+    setWaTemplateVipDraft(
+      state.settings.waTemplateVip?.trim()
+        ? sanitizeWhatsAppText(state.settings.waTemplateVip)
+        : DEFAULT_WA_TEMPLATE_VIP
+    );
+    setWaTemplateRegularDraft(
+      state.settings.waTemplateRegular?.trim()
+        ? sanitizeWhatsAppText(state.settings.waTemplateRegular)
+        : DEFAULT_WA_TEMPLATE_REGULAR
+    );
+  }, [
+    state.settings.waTemplateVip,
+    state.settings.waTemplateRegular,
+    isWaGlobalModalOpen,
+    waPreviewGuest,
+  ]);
   const [copiedGuestLinkId, setCopiedGuestLinkId] = useState<string | null>(null);
   const [replyingWishId, setReplyingWishId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
@@ -889,7 +909,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const openGuestWaPreview = (guest: WeddingGuest) => {
     const gen = getGuestPersonalWaData(guest, state.settings);
     setWaPreviewGuest(guest);
-    setWaCustomMessage(gen.messageText);
+    // null = live-synced to Template Global (only becomes non-null when user edits Pesan Tamu directly)
+    setWaCustomMessage(null);
     setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
     setWaTemplateVipDraft(
       state.settings.waTemplateVip?.trim()
@@ -906,7 +927,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   };
 
   const openGlobalWaTemplateEditor = () => {
-    setWaPreviewGuest(state.guests[0] || null);
+    const firstGuest = state.guests[0] || null;
+    setWaPreviewGuest(firstGuest);
+    setWaCustomMessage(null);
+    if (firstGuest) {
+      const gen = getGuestPersonalWaData(firstGuest, state.settings);
+      setWaGlobalTab(gen.isVipPolri ? 'vip' : 'regular');
+    }
     setWaTemplateVipDraft(
       state.settings.waTemplateVip?.trim()
         ? sanitizeWhatsAppText(state.settings.waTemplateVip)
@@ -921,16 +948,27 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setIsWaGlobalModalOpen(true);
   };
 
-  const handleSaveGlobalWaTemplates = async () => {
+  const handleSaveGlobalWaTemplates = async (applyActiveToBoth = false) => {
+    const activeDraft =
+      waGlobalTab === 'vip' ? waTemplateVipDraft : waTemplateRegularDraft;
+    const cleanActive = sanitizeWhatsAppText(activeDraft).trim();
+    const nextVip = applyActiveToBoth
+      ? cleanActive || DEFAULT_WA_TEMPLATE_VIP
+      : sanitizeWhatsAppText(waTemplateVipDraft).trim() ||
+        DEFAULT_WA_TEMPLATE_VIP;
+    const nextRegular = applyActiveToBoth
+      ? cleanActive || DEFAULT_WA_TEMPLATE_REGULAR
+      : sanitizeWhatsAppText(waTemplateRegularDraft).trim() ||
+        DEFAULT_WA_TEMPLATE_REGULAR;
+
+    setWaTemplateVipDraft(nextVip);
+    setWaTemplateRegularDraft(nextRegular);
+
     const nextSettings: WeddingSettings = {
       ...state.settings,
       ...settingsForm,
-      waTemplateVip:
-        sanitizeWhatsAppText(waTemplateVipDraft).trim() ||
-        DEFAULT_WA_TEMPLATE_VIP,
-      waTemplateRegular:
-        sanitizeWhatsAppText(waTemplateRegularDraft).trim() ||
-        DEFAULT_WA_TEMPLATE_REGULAR,
+      waTemplateVip: nextVip,
+      waTemplateRegular: nextRegular,
       updatedBy: adminUser.username,
     };
     await commitImmediateSettings(nextSettings);
@@ -939,17 +977,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       module: 'WA_TEMPLATE',
       action: 'SIMPAN',
       status: 'SUCCESS',
-      summary: 'Menyimpan Template Global Pengantar WhatsApp (VIP & Reguler)',
+      summary: applyActiveToBoth
+        ? 'Menyimpan Template Global WhatsApp yang sama untuk VIP & Reguler'
+        : 'Menyimpan Template Global Pengantar WhatsApp (VIP & Reguler)',
     });
+    // Reset per-guest manual override so Pesan Tamu immediately reflects the newly saved Global Template
+    setWaCustomMessage(null);
     if (waPreviewGuest) {
-      const refreshed = getGuestPersonalWaData(waPreviewGuest, nextSettings);
-      setWaCustomMessage(refreshed.messageText);
       setWaModalMode('preview');
     } else {
       setIsWaGlobalModalOpen(false);
     }
     showToast(
-      '✓ Tersimpan: Template Pengantar WhatsApp Global berhasil disimpan untuk semua tamu!'
+      applyActiveToBoth
+        ? '✓ Tersimpan! Template WA diterapkan ke SEMUA tamu (VIP & Reguler).'
+        : '✓ Tersimpan! Template Pengantar WhatsApp Global otomatis tersinkron ke Pesan Tamu.'
     );
   };
 
@@ -22689,11 +22731,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
         <div className="fixed inset-0 z-50 bg-stone-950/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
           {(() => {
             const targetGuest = waPreviewGuest || state.guests[0];
+            // Overlay live Template Global drafts so switching tabs between Template Global <-> Pesan Tamu ALWAYS stays 100% in sync!
+            const livePreviewSettings: WeddingSettings = {
+              ...state.settings,
+              waTemplateVip: waTemplateVipDraft.trim() || state.settings.waTemplateVip,
+              waTemplateRegular:
+                waTemplateRegularDraft.trim() || state.settings.waTemplateRegular,
+            };
             const generated = targetGuest
-              ? getGuestPersonalWaData(targetGuest, state.settings)
+              ? getGuestPersonalWaData(targetGuest, livePreviewSettings)
               : null;
+            const savedVip =
+              state.settings.waTemplateVip?.trim() || DEFAULT_WA_TEMPLATE_VIP;
+            const savedReg =
+              state.settings.waTemplateRegular?.trim() || DEFAULT_WA_TEMPLATE_REGULAR;
+            const hasUnsavedGlobalDraft =
+              sanitizeWhatsAppText(waTemplateVipDraft).trim() !==
+                sanitizeWhatsAppText(savedVip).trim() ||
+              sanitizeWhatsAppText(waTemplateRegularDraft).trim() !==
+                sanitizeWhatsAppText(savedReg).trim();
             const effectiveMessage =
-              waCustomMessage || generated?.messageText || '';
+              waCustomMessage !== null
+                ? waCustomMessage
+                : generated?.messageText || '';
             const effectiveWaHref = targetGuest
               ? buildWaHref(targetGuest.phone, effectiveMessage)
               : '#';
@@ -22728,6 +22788,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     onClick={() => {
                       setIsWaGlobalModalOpen(false);
                       setWaPreviewGuest(null);
+                      setWaCustomMessage(null);
                     }}
                     className="w-9 h-9 rounded-full hover:bg-[#FAF3E3] flex items-center justify-center text-stone-600 shrink-0"
                   >
@@ -22740,8 +22801,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {targetGuest && (
                     <button
                       type="button"
-                      onClick={() => setWaModalMode('preview')}
-                      className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 transition-all ${
+                      onClick={() => {
+                        setWaCustomMessage(null);
+                        setWaModalMode('preview');
+                      }}
+                      className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 transition-all cursor-pointer ${
                         waModalMode === 'preview'
                           ? 'border-[#B68D40] text-[#8B6914] bg-[#FAF3E3]/60'
                           : 'border-transparent text-stone-500 hover:text-stone-800'
@@ -22752,8 +22816,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   )}
                   <button
                     type="button"
-                    onClick={() => setWaModalMode('global')}
-                    className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 flex items-center gap-1.5 transition-all ${
+                    onClick={() => {
+                      if (generated) {
+                        setWaGlobalTab(generated.isVipPolri ? 'vip' : 'regular');
+                      }
+                      setWaModalMode('global');
+                    }}
+                    className={`px-3.5 py-2 rounded-t-xl font-bold text-xs border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
                       waModalMode === 'global'
                         ? 'border-[#B68D40] text-[#8B6914] bg-[#FAF3E3]/60'
                         : 'border-transparent text-stone-500 hover:text-stone-800'
@@ -22761,12 +22830,29 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   >
                     <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
                     <span>Template Global</span>
+                    {hasUnsavedGlobalDraft && (
+                      <span className="w-2 h-2 rounded-full bg-amber-500" title="Ada perubahan template belum disimpan" />
+                    )}
                   </button>
                 </div>
 
                 {waModalMode === 'preview' && generated && targetGuest ? (
                   <>
                     <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+                      {hasUnsavedGlobalDraft && (
+                        <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300/80 flex items-center justify-between gap-2 text-[11px] text-amber-900">
+                          <span className="font-semibold">
+                            Draft Template Global aktif di pratinjau ini, belum disimpan ke database.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => void handleSaveGlobalWaTemplates(false)}
+                            className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold shrink-0 cursor-pointer"
+                          >
+                            Simpan Permanen
+                          </button>
+                        </div>
+                      )}
                       <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-[11px] font-bold text-stone-700">
@@ -22795,23 +22881,39 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                       <div>
                         <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <label className="block font-bold text-stone-700">
                               Pesan Pengantar WA
                             </label>
-                            <InfoTooltip
-                              text={`Otomatis mengikuti template ${
-                                generated.isVipPolri ? 'VIP / Pejabat (P1)' : 'Umum / Reguler'
-                              }. Anda juga dapat mengedit langsung teks di bawah.`}
-                            />
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                                generated.isVipPolri
+                                  ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              }`}
+                            >
+                              {generated.isVipPolri
+                                ? '⭐ Template VIP (P1)'
+                                : '✉️ Template Umum / Reguler'}
+                            </span>
+                            {waCustomMessage !== null && (
+                              <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 text-[10px] font-bold">
+                                Diedit Khusus Tamu Ini
+                              </span>
+                            )}
                           </div>
                           <button
                             type="button"
-                            onClick={() => setWaModalMode('global')}
-                            className="inline-flex items-center gap-1 text-xs font-bold text-[#8B6914] hover:underline"
+                            onClick={() => {
+                              setWaGlobalTab(generated.isVipPolri ? 'vip' : 'regular');
+                              setWaModalMode('global');
+                            }}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#8B6914] hover:underline cursor-pointer"
                           >
                             <Settings className="w-3.5 h-3.5 text-[#B68D40]" />
-                            <span>Template Global &rarr;</span>
+                            <span>
+                              Edit Template {generated.isVipPolri ? 'VIP' : 'Reguler'} &rarr;
+                            </span>
                           </button>
                         </div>
                         <textarea
@@ -22826,10 +22928,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
                       <button
                         type="button"
-                        onClick={() => setWaCustomMessage(generated.messageText)}
-                        className="text-xs font-semibold text-stone-500 hover:text-stone-800"
+                        onClick={() => {
+                          setWaCustomMessage(null);
+                          showToast('✓ Pesan tamu disinkronkan ulang dengan Template Global.');
+                        }}
+                        className="text-xs font-semibold text-stone-500 hover:text-stone-800 cursor-pointer"
                       >
-                        Reset Default
+                        Sinkronkan ke Template Global
                       </button>
                       <div className="flex items-center gap-2">
                         <button
@@ -22990,11 +23095,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       </div>
                     </div>
 
-                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-end gap-2">
+                    <div className="px-5 sm:px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex items-center justify-between gap-2 flex-wrap">
                       <button
                         type="button"
-                        onClick={handleSaveGlobalWaTemplates}
-                        className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm shadow-xs transition-all"
+                        onClick={() => void handleSaveGlobalWaTemplates(true)}
+                        className="px-4 py-2 rounded-full border border-[#D4AF37]/50 bg-white hover:bg-[#FAF3E3] text-[#8B6914] font-bold text-xs transition-all cursor-pointer"
+                        title="Samakan teks template ini untuk SEMUA tamu (baik VIP/P1 maupun Umum/Reguler)"
+                      >
+                        Terapkan ke VIP &amp; Reguler
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveGlobalWaTemplates(false)}
+                        className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:from-[#B68D40] hover:to-[#9A742B] text-white font-bold text-xs sm:text-sm shadow-xs transition-all cursor-pointer"
                       >
                         Simpan Template
                       </button>

@@ -688,26 +688,19 @@ export function buildGuestInvitationUrl(
 export function sanitizeWhatsAppText(raw: string): string {
   if (!raw) return '';
   return raw
-    // 1. Bersihkan mojibake UTF-8 umum & karakter replacement rusak ()
+    // 1. Bersihkan mojibake UTF-8 umum & karakter replacement rusak
     .replace(/\uFFFD+/g, '•')
     .replace(/â€¢/g, '•')
     .replace(/â€”/g, '—')
     .replace(/â€“/g, '–')
     .replace(/âœ¨/g, '✨')
-    // 2. Pastikan link undangan berada di baris bersih tanpa simbol di depannya agar OG Link Preview WhatsApp selalu terpicu
-    .replace(/(?:👉|▸|\uFFFD)\s*(\{link_undangan\}|https?:\/\/)/g, '$1')
-    // 3. Ganti emoji 4-byte surrogate pairs (U+10000+) yang sering rusak jadi '' di protokol URI WhatsApp Desktop Windows dengan simbol Unicode BMP 16-bit aman
-    .replace(/💍/g, '✨')
-    .replace(/📅|🗓️|🗓/g, '•')
-    .replace(/📍/g, '❖')
-    .replace(/🔑/g, '❖')
-    .replace(/👉/g, '▸')
-    .replace(/🙏🏻|🙏🏼|🙏🏽|🙏🏾|🙏🏿|🙏/g, '✨')
-    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '✨')
-    // 4. Hapus surrogate yatim (unpaired surrogate) yang memicu karakter ''
-    .replace(/[\uD800-\uDFFF]/g, '')
-    // 5. Hapus variation selector yatim jika ada
-    .replace(/\uFE0F/g, '');
+    // 2. Pastikan link undangan berada di baris bersih tanpa simbol rusak di depannya
+    .replace(/(?:▸|\uFFFD)\s*(\{link_undangan\}|https?:\/\/)/g, '$1')
+    // 3. Hapus hanya surrogate yatim (unpaired surrogate) — pertahankan seluruh emoji Unicode modern (🤵, 👰, 💍, 💌, 📅, 📍, 🙏)
+    .replace(
+      /(?:^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g,
+      (m) => (m.length === 2 ? m[0] : '')
+    );
 }
 
 export const DEFAULT_WA_TEMPLATE_VIP = [
