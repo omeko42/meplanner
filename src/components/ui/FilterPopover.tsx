@@ -287,15 +287,13 @@ export function FilterPopover({
                   <button
                     key={group.id}
                     type="button"
-                    onMouseEnter={() => {
-                      setActiveGroupId(group.id);
-                      setActiveSubParentValue(null);
-                    }}
                     onClick={() => {
-                      setActiveGroupId(group.id);
+                      setActiveGroupId((prev) =>
+                        prev === group.id ? null : group.id
+                      );
                       setActiveSubParentValue(null);
                     }}
-                    className={`w-full px-3 py-2 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer ${
+                    className={`w-full px-3 py-2 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer active:bg-[#FAF3E3] ${
                       isFocused
                         ? 'bg-[#FAF3E3]/80 text-[#8B6914]'
                         : 'text-stone-700 hover:bg-stone-50'
@@ -344,16 +342,17 @@ export function FilterPopover({
                   <button
                     key={opt.value}
                     type="button"
-                    onMouseEnter={() => {
-                      setActiveSubParentValue(hasChildren ? opt.value : null);
-                    }}
                     onClick={() => {
-                      activeGroup.onChange(opt.value);
-                      if (!hasChildren) {
+                      if (hasChildren) {
+                        setActiveSubParentValue((prev) =>
+                          prev === opt.value ? null : opt.value
+                        );
+                      } else {
+                        activeGroup.onChange(opt.value);
                         setIsOpen(false);
                       }
                     }}
-                    className={`w-full px-3 py-2 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer ${
+                    className={`w-full px-3 py-2 flex items-center justify-between gap-2 text-left transition-colors cursor-pointer active:bg-[#FAF3E3] ${
                       isSelected || isChildSelected || isSubOpen
                         ? 'bg-[#FAF3E3] text-[#8B6914] font-bold'
                         : 'text-stone-700 hover:bg-stone-50 font-medium'

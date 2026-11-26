@@ -90,13 +90,9 @@ export function InfoTooltip({
           if (!open) updatePosition();
           setOpen((v) => !v);
         }}
-        onMouseEnter={() => {
-          updatePosition();
-          setOpen(true);
-        }}
-        onMouseLeave={() => setOpen(false)}
+        aria-expanded={open}
         aria-label={text}
-        className={`w-4 h-4 rounded-full bg-[#FAF3E3] hover:bg-[#EFE1C6] border border-[#D4AF37]/55 text-[#8B6914] inline-flex items-center justify-center transition-colors shrink-0 cursor-pointer align-middle ${className}`}
+        className={`w-4 h-4 rounded-full bg-[#FAF3E3] hover:bg-[#EFE1C6] border border-[#D4AF37]/55 text-[#8B6914] inline-flex items-center justify-center transition-colors shrink-0 cursor-pointer align-middle active:scale-95 ${className}`}
       >
         <Info className="w-2.5 h-2.5" />
       </button>

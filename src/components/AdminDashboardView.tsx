@@ -14140,6 +14140,235 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                               </div>
                                             </div>
 
+                                            {/* Gateway Pembayaran Pihak Ketiga (Midtrans, Xendit, Konvert.id, Levelwise, Mayar, Saweria) */}
+                                            <div className="p-3.5 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
+                                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                <div>
+                                                  <p className="font-bold text-stone-900 text-xs">
+                                                    Integrasi Pembayaran Pihak Ketiga (Midtrans, Xendit, Konvert.id, Levelwise)
+                                                  </p>
+                                                  <p className="text-[11px] text-stone-500">
+                                                    Hubungkan tautan pembayaran instan atau checkout otomatis Midtrans / Xendit langsung di Amplop Digital.
+                                                  </p>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const curr = settingsForm.giftGatewayConfig || {
+                                                      enabled: false,
+                                                      provider: 'MIDTRANS' as const,
+                                                      mode: 'PAYMENT_LINK' as const,
+                                                    };
+                                                    setSettingsForm({
+                                                      ...settingsForm,
+                                                      giftGatewayConfig: {
+                                                        ...curr,
+                                                        enabled: !curr.enabled,
+                                                      },
+                                                    });
+                                                  }}
+                                                  className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${
+                                                    settingsForm.giftGatewayConfig?.enabled
+                                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                                      : 'bg-stone-100 text-stone-500 border-stone-200'
+                                                  }`}
+                                                >
+                                                  {settingsForm.giftGatewayConfig?.enabled
+                                                    ? '● Aktif di Undangan'
+                                                    : '○ Nonaktif'}
+                                                </button>
+                                              </div>
+
+                                              {settingsForm.giftGatewayConfig?.enabled && (
+                                                <div className="space-y-2.5 pt-2 border-t border-stone-200/70">
+                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    <div>
+                                                      <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                                        Penyedia Pembayaran
+                                                      </label>
+                                                      <select
+                                                        value={
+                                                          settingsForm.giftGatewayConfig?.provider ||
+                                                          'MIDTRANS'
+                                                        }
+                                                        onChange={(e) => {
+                                                          const nextProvider = e.target.value as NonNullable<
+                                                            WeddingSettings['giftGatewayConfig']
+                                                          >['provider'];
+                                                          const curr = settingsForm.giftGatewayConfig!;
+                                                          const supportsApi =
+                                                            nextProvider === 'MIDTRANS' ||
+                                                            nextProvider === 'XENDIT';
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            giftGatewayConfig: {
+                                                              ...curr,
+                                                              provider: nextProvider,
+                                                              mode: supportsApi
+                                                                ? curr.mode
+                                                                : 'PAYMENT_LINK',
+                                                            },
+                                                          });
+                                                        }}
+                                                        className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800"
+                                                      >
+                                                        <option value="MIDTRANS">Midtrans</option>
+                                                        <option value="XENDIT">Xendit</option>
+                                                        <option value="KONVERT_ID">Konvert.id</option>
+                                                        <option value="LEVELWISE">Levelwise</option>
+                                                        <option value="MAYAR">Mayar</option>
+                                                        <option value="SAWERIA">Saweria</option>
+                                                        <option value="CUSTOM">Tautan Pembayaran Lain</option>
+                                                      </select>
+                                                    </div>
+
+                                                    <div>
+                                                      <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                                        Metode Koneksi
+                                                      </label>
+                                                      <select
+                                                        value={
+                                                          settingsForm.giftGatewayConfig?.mode ||
+                                                          'PAYMENT_LINK'
+                                                        }
+                                                        onChange={(e) => {
+                                                          const curr = settingsForm.giftGatewayConfig!;
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            giftGatewayConfig: {
+                                                              ...curr,
+                                                              mode: e.target.value as
+                                                                | 'PAYMENT_LINK'
+                                                                | 'API_CHECKOUT',
+                                                            },
+                                                          });
+                                                        }}
+                                                        className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white text-xs font-semibold text-stone-800"
+                                                      >
+                                                        <option value="PAYMENT_LINK">
+                                                          Tautan Pembayaran (Langsung Pakai)
+                                                        </option>
+                                                        {(settingsForm.giftGatewayConfig?.provider ===
+                                                          'MIDTRANS' ||
+                                                          settingsForm.giftGatewayConfig?.provider ===
+                                                            'XENDIT') && (
+                                                          <option value="API_CHECKOUT">
+                                                            Checkout Nominal Bebas (API Server)
+                                                          </option>
+                                                        )}
+                                                      </select>
+                                                    </div>
+                                                  </div>
+
+                                                  {settingsForm.giftGatewayConfig?.mode !==
+                                                  'API_CHECKOUT' ? (
+                                                    <div>
+                                                      <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                                        Tautan Pembayaran Resmi (https://...)
+                                                      </label>
+                                                      <input
+                                                        type="url"
+                                                        value={
+                                                          settingsForm.giftGatewayConfig
+                                                            ?.paymentLinkUrl || ''
+                                                        }
+                                                        onChange={(e) =>
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            giftGatewayConfig: {
+                                                              ...settingsForm.giftGatewayConfig!,
+                                                              paymentLinkUrl: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Contoh: https://konvert.id/... atau https://app.midtrans.com/payment-links/..."
+                                                        className="w-full px-3 py-2 rounded-lg border border-stone-300 bg-white text-xs font-mono"
+                                                      />
+                                                    </div>
+                                                  ) : (
+                                                    <p className="text-[11px] text-stone-600 bg-white px-3 py-2 rounded-lg border border-stone-200">
+                                                      Mode API otomatis memproses nominal bebas tamu melalui server menggunakan{' '}
+                                                      <strong>
+                                                        {settingsForm.giftGatewayConfig?.provider ===
+                                                        'XENDIT'
+                                                          ? 'XENDIT_SECRET_KEY'
+                                                          : 'MIDTRANS_SERVER_KEY'}
+                                                      </strong>{' '}
+                                                      di pengaturan server.
+                                                    </p>
+                                                  )}
+
+                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                    <div>
+                                                      <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                                        Teks Tombol di Undangan
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        value={
+                                                          settingsForm.giftGatewayConfig?.label || ''
+                                                        }
+                                                        onChange={(e) =>
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            giftGatewayConfig: {
+                                                              ...settingsForm.giftGatewayConfig!,
+                                                              label: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Kirim Tanda Kasih Instan"
+                                                        className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                      />
+                                                    </div>
+                                                    <div>
+                                                      <label className="block font-bold text-stone-700 text-[11px] mb-1">
+                                                        Keterangan Singkat (Opsional)
+                                                      </label>
+                                                      <input
+                                                        type="text"
+                                                        value={
+                                                          settingsForm.giftGatewayConfig
+                                                            ?.description || ''
+                                                        }
+                                                        onChange={(e) =>
+                                                          setSettingsForm({
+                                                            ...settingsForm,
+                                                            giftGatewayConfig: {
+                                                              ...settingsForm.giftGatewayConfig!,
+                                                              description: e.target.value,
+                                                            },
+                                                          })
+                                                        }
+                                                        placeholder="Mendukung QRIS, Virtual Account, GoPay, OVO, DANA & Kartu"
+                                                        className="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs"
+                                                      />
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="flex justify-end">
+                                                    <button
+                                                      type="button"
+                                                      onClick={async () => {
+                                                        const nextSettings: WeddingSettings = {
+                                                          ...state.settings,
+                                                          ...settingsForm,
+                                                          updatedBy: adminUser.username,
+                                                        };
+                                                        await commitImmediateSettings(nextSettings);
+                                                        showToast(
+                                                          'Pengaturan pembayaran pihak ketiga tersimpan.'
+                                                        );
+                                                      }}
+                                                      className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white font-bold text-xs cursor-pointer"
+                                                    >
+                                                      Simpan Koneksi Pembayaran
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+
                                             {/* Pengaturan Kado Fisik */}
                                             <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-2.5">
                                               <div className="flex items-center justify-between gap-2 flex-wrap">

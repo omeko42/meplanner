@@ -2774,6 +2774,10 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
   const [giftNominalInput, setGiftNominalInput] = useState<string>('');
   const [giftNoteInput, setGiftNoteInput] = useState<string>('');
   const [giftFormError, setGiftFormError] = useState<string>('');
+  const [gatewayGiftAmount, setGatewayGiftAmount] = useState<number>(200000);
+  const [gatewayGiftName, setGatewayGiftName] = useState<string>('');
+  const [isLaunchingGiftGateway, setIsLaunchingGiftGateway] = useState(false);
+  const [gatewayGiftError, setGatewayGiftError] = useState<string>('');
 
   const guestCheckInHash = useMemo(() => {
     if (effectiveMatchedGuest) {
@@ -7532,6 +7536,184 @@ export const PublicInvitationView: React.FC<PublicInvitationViewProps> = ({
 
               return (
                 <>
+                  {/* Third-Party Payment Gateway Card (Midtrans / Xendit / Konvert.id / Levelwise / Mayar / Saweria) */}
+                  {settings.giftGatewayConfig?.enabled &&
+                    giftCategoryFilter !== 'WISHLIST' && (
+                      <div className="max-w-2xl mx-auto mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FFFDF9] via-[#FAF6EE] to-[#F3E9D2] border border-[#D4AF37]/50 text-left shadow-xs relative z-10 space-y-3">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-bold uppercase tracking-wider">
+                              {settings.giftGatewayConfig.provider === 'KONVERT_ID'
+                                ? 'Konvert.id'
+                                : settings.giftGatewayConfig.provider === 'LEVELWISE'
+                                  ? 'Levelwise'
+                                  : settings.giftGatewayConfig.provider === 'MIDTRANS'
+                                    ? 'Midtrans'
+                                    : settings.giftGatewayConfig.provider === 'XENDIT'
+                                      ? 'Xendit'
+                                      : settings.giftGatewayConfig.provider === 'MAYAR'
+                                        ? 'Mayar'
+                                        : settings.giftGatewayConfig.provider === 'SAWERIA'
+                                          ? 'Saweria'
+                                          : 'Pembayaran Instan'}
+                            </span>
+                            <h3 className="text-sm sm:text-base font-bold text-stone-900 mt-1.5">
+                              {settings.giftGatewayConfig.label?.trim() ||
+                                (lang === 'ID'
+                                  ? 'Kirim Tanda Kasih Instan'
+                                  : 'Send Instant Digital Gift')}
+                            </h3>
+                            <p className="text-xs text-stone-600 mt-0.5">
+                              {settings.giftGatewayConfig.description?.trim() ||
+                                (lang === 'ID'
+                                  ? 'Mendukung QRIS, Virtual Account Bank, E-Wallet (GoPay, OVO, DANA, ShopeePay) & Kartu.'
+                                  : 'Supports QRIS, Virtual Account, E-Wallets, and Cards.')}
+                            </p>
+                          </div>
+                        </div>
+
+                        {settings.giftGatewayConfig.mode === 'API_CHECKOUT' &&
+                        (settings.giftGatewayConfig.provider === 'MIDTRANS' ||
+                          settings.giftGatewayConfig.provider === 'XENDIT') ? (
+                          <div className="space-y-3 pt-1">
+                            <div className="flex flex-wrap gap-1.5">
+                              {(
+                                settings.giftGatewayConfig.presetAmounts || [
+                                  100000, 200000, 500000, 1000000,
+                                ]
+                              ).map((amt) => (
+                                <button
+                                  key={amt}
+                                  type="button"
+                                  onClick={() => setGatewayGiftAmount(amt)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                                    gatewayGiftAmount === amt
+                                      ? 'bg-stone-900 text-white border-stone-900'
+                                      : 'bg-white text-stone-700 border-stone-200 hover:border-[#C5A059]'
+                                  }`}
+                                >
+                                  Rp {amt.toLocaleString('id-ID')}
+                                </button>
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <input
+                                type="number"
+                                min={10000}
+                                step={10000}
+                                value={gatewayGiftAmount || ''}
+                                onChange={(e) =>
+                                  setGatewayGiftAmount(Number(e.target.value) || 0)
+                                }
+                                placeholder="Nominal (Rp)"
+                                className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-xs font-semibold text-stone-900"
+                              />
+                              <input
+                                type="text"
+                                value={
+                                  gatewayGiftName ||
+                                  effectiveMatchedGuest?.guestName ||
+                                  ''
+                                }
+                                onChange={(e) => setGatewayGiftName(e.target.value)}
+                                placeholder={
+                                  lang === 'ID' ? 'Nama pengirim' : 'Sender name'
+                                }
+                                className="px-3 py-2 rounded-xl border border-stone-200 bg-white text-xs text-stone-900"
+                              />
+                            </div>
+
+                            {gatewayGiftError && (
+                              <p className="text-xs font-semibold text-rose-600">
+                                {gatewayGiftError}
+                              </p>
+                            )}
+
+                            <button
+                              type="button"
+                              disabled={isLaunchingGiftGateway}
+                              onClick={async () => {
+                                setGatewayGiftError('');
+                                if (!gatewayGiftAmount || gatewayGiftAmount < 10000) {
+                                  setGatewayGiftError(
+                                    'Nominal minimal Rp 10.000.'
+                                  );
+                                  return;
+                                }
+                                setIsLaunchingGiftGateway(true);
+                                try {
+                                  const res = await fetch('/api/gift/checkout', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      provider: settings.giftGatewayConfig?.provider,
+                                      amount: gatewayGiftAmount,
+                                      guestName:
+                                        gatewayGiftName.trim() ||
+                                        effectiveMatchedGuest?.guestName ||
+                                        'Tamu Undangan',
+                                      coupleLabel: `${settings.groomNickname} & ${settings.brideNickname}`,
+                                      returnUrl:
+                                        typeof window !== 'undefined'
+                                          ? window.location.href
+                                          : undefined,
+                                    }),
+                                  });
+                                  const data = await res.json().catch(() => ({}));
+                                  if (!res.ok || !data?.redirectUrl) {
+                                    setGatewayGiftError(
+                                      data?.error ||
+                                        'Gagal membuka halaman pembayaran.'
+                                    );
+                                    return;
+                                  }
+                                  window.open(
+                                    data.redirectUrl,
+                                    '_blank',
+                                    'noopener,noreferrer'
+                                  );
+                                } catch {
+                                  setGatewayGiftError(
+                                    'Gagal menghubungi layanan pembayaran.'
+                                  );
+                                } finally {
+                                  setIsLaunchingGiftGateway(false);
+                                }
+                              }}
+                              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:opacity-95 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                            >
+                              <ExternalLink className="w-4 h-4 shrink-0" />
+                              <span>
+                                {isLaunchingGiftGateway
+                                  ? 'Menyiapkan Pembayaran...'
+                                  : `Lanjutkan Pembayaran (Rp ${gatewayGiftAmount.toLocaleString('id-ID')})`}
+                              </span>
+                            </button>
+                          </div>
+                        ) : settings.giftGatewayConfig.paymentLinkUrl?.trim() ? (
+                          <a
+                            href={
+                              /^https?:\/\//i.test(
+                                settings.giftGatewayConfig.paymentLinkUrl.trim()
+                              )
+                                ? settings.giftGatewayConfig.paymentLinkUrl.trim()
+                                : `https://${settings.giftGatewayConfig.paymentLinkUrl.trim()}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#B68D40] hover:opacity-95 text-white font-bold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-xs"
+                          >
+                            <ExternalLink className="w-4 h-4 shrink-0" />
+                            <span>
+                              {settings.giftGatewayConfig.label?.trim() ||
+                                'Buka Halaman Pembayaran'}
+                            </span>
+                          </a>
+                        ) : null}
+                      </div>
+                    )}
+
                   {giftCategoryFilter !== 'QRIS' &&
                     giftCategoryFilter !== 'WISHLIST' &&
                     displayedBankAccounts.length > 0 && (

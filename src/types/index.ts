@@ -161,6 +161,25 @@ export interface BudgetVendorItem {
   updatedAt: string;
 }
 
+export type GiftGatewayProvider =
+  | 'MIDTRANS'
+  | 'XENDIT'
+  | 'KONVERT_ID'
+  | 'LEVELWISE'
+  | 'MAYAR'
+  | 'SAWERIA'
+  | 'CUSTOM';
+
+export interface GiftGatewayConfig {
+  enabled: boolean;
+  provider: GiftGatewayProvider;
+  mode: 'PAYMENT_LINK' | 'API_CHECKOUT';
+  label?: string;
+  paymentLinkUrl?: string;
+  description?: string;
+  presetAmounts?: number[];
+}
+
 export interface DigitalGiftAccount {
   id: string;
   bankName: string;
@@ -392,6 +411,7 @@ export interface WeddingSettings {
   qrisImageUrl?: string;
   showQrisButton?: boolean;
   bankAccounts: DigitalGiftAccount[];
+  giftGatewayConfig?: GiftGatewayConfig;
 
   // Love Story & Gallery
   loveStory: LoveStoryItem[];
