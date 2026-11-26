@@ -86,6 +86,7 @@ export async function POST(request: NextRequest) {
     if (action === 'GOOGLE_OAUTH_LOGIN' && body.accessToken) {
       const accessToken = String(body.accessToken).trim();
       let verifiedEmail = '';
+      let verifiedGoogleName = '';
 
       try {
         const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
           const gData = await gRes.json();
           if (gData?.email && gData?.email_verified !== false) {
             verifiedEmail = String(gData.email).trim().toLowerCase();
+            verifiedGoogleName = String(gData.name || gData.given_name || '').trim();
           }
         }
       } catch {
@@ -110,7 +112,7 @@ export async function POST(request: NextRequest) {
       }
 
       const dbAdmins = serverStore.getAdminUsers();
-      const matchedAdmin = dbAdmins.find(
+      let matchedAdmin = dbAdmins.find(
         (u) =>
           (u.email && u.email.trim().toLowerCase() === verifiedEmail) ||
           u.username.trim().toLowerCase() === verifiedEmail
@@ -118,19 +120,43 @@ export async function POST(request: NextRequest) {
 
       const isOwnerSuperadmin = verifySuperadminIdentity(verifiedEmail);
 
-      // An unknown Google account must NOT receive a session. Previously any
-      // Google email got an automatic MEMPELAI_PRIA session with its own
-      // workspace, which was a self-service privilege escalation.
+      // An unknown Google account only receives a strictly isolated FREE
+      // workspace when explicitly signing up (`allowAutoRegister: true`) after
+      // Google has server-side verified the email address. Never escalates to
+      // SUPERADMIN or grants access to `client-utama`.
       if (!isOwnerSuperadmin && !matchedAdmin) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              'Akun ini belum terdaftar. Silakan daftar terlebih dahulu atau hubungi admin.',
-            code: 'ACCOUNT_NOT_REGISTERED',
-          },
-          { status: 403 }
-        );
+        if (!body.allowAutoRegister) {
+          return NextResponse.json(
+            {
+              success: false,
+              error:
+                'Akun ini belum terdaftar. Silakan daftar gratis terlebih dahulu atau hubungi admin.',
+              code: 'ACCOUNT_NOT_REGISTERED',
+            },
+            { status: 403 }
+          );
+        }
+
+        const slug = verifiedEmail.replace(/[^a-z0-9]/g, '').slice(0, 14) || 'planner';
+        const newClientId = `client-gmail-${slug}`;
+        const displayName =
+          String(body.displayName || '').trim() ||
+          verifiedGoogleName ||
+          verifiedEmail.split('@')[0];
+        const eventType = String(body.eventType || 'WEDDING').trim();
+
+        matchedAdmin = serverStore.updateAdminUser(`usr-gmail-${slug}`, {
+          id: `usr-gmail-${slug}`,
+          username: verifiedEmail,
+          nama: displayName,
+          role: 'MEMPELAI_PRIA',
+          jabatan: `Paket GRATIS • ${eventType}`,
+          email: verifiedEmail,
+          isDefaultUser: true,
+          clientId: newClientId,
+          clientName: `Client • ${displayName}`,
+        });
+        await saveStateToSupabase(serverStore.getFullState()).catch(() => null);
       }
 
       const requestedClientId = String(body.clientId || 'client-utama').trim();
@@ -141,7 +167,18 @@ export async function POST(request: NextRequest) {
             : 'Klien Utama • Agung & Selo')
       ).trim();
 
-      const sessionUser = isOwnerSuperadmin
+      const resolvedClientId = isOwnerSuperadmin
+        ? requestedClientId
+        : matchedAdmin!.clientId || 'client-utama';
+      const resolvedClientName = isOwnerSuperadmin
+        ? requestedClientName
+        : matchedAdmin!.clientName || 'Klien Utama • Agung & Selo';
+      const resolvedTenantId = await ensureDefaultTenant(
+        resolvedClientId,
+        resolvedClientName
+      );
+
+      const sessionUser: SessionUser = isOwnerSuperadmin
         ? {
             id: 'superadmin-owner',
             username: 'superadmin',
@@ -150,8 +187,9 @@ export async function POST(request: NextRequest) {
             jabatan: 'Superadmin',
             email: verifiedEmail,
             isDefaultUser: true,
-            clientId: requestedClientId,
-            clientName: requestedClientName,
+            clientId: resolvedClientId,
+            clientName: resolvedClientName,
+            ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
           }
         : {
             id: matchedAdmin!.id,
@@ -161,9 +199,9 @@ export async function POST(request: NextRequest) {
             jabatan: matchedAdmin!.jabatan,
             email: matchedAdmin!.email || verifiedEmail,
             isDefaultUser: Boolean(matchedAdmin!.isDefaultUser),
-            clientId: matchedAdmin!.clientId || 'client-utama',
-            clientName:
-              matchedAdmin!.clientName || 'Klien Utama • Agung & Selo',
+            clientId: resolvedClientId,
+            clientName: resolvedClientName,
+            ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
           };
 
       const token = createSessionToken(sessionUser);
@@ -353,7 +391,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const identifier = String(body.identifier || '').trim();
+    const identifier = String(
+      body.identifier || body.username || body.email || ''
+    ).trim();
     const password = String(body.password || '');
     const ip =
       request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||

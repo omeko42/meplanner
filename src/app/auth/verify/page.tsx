@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { BrandLoader } from '@/components/ui/BrandLoader';
 
 type VerifyState = 'checking' | 'success' | 'error';
 
@@ -23,10 +24,14 @@ function VerifyShell({
 }) {
   return (
     <main className="min-h-dvh flex items-center justify-center bg-[#FAF7F0] px-5 py-12">
-      <div className="w-full max-w-md rounded-3xl border border-stone-200/70 bg-white/85 p-8 text-center shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)] backdrop-blur">
-        <div className="mb-5 flex justify-center">
-          <WeddingRingsIcon className="h-11 w-11" />
-        </div>
+      <div className="w-full max-w-md rounded-3xl border border-stone-200/70 bg-white/90 p-8 text-center shadow-[0_18px_50px_-24px_rgba(28,25,23,0.35)] backdrop-blur animate-meplan-enter">
+        {state === 'checking' ? (
+          <BrandLoader size="md" className="py-4" />
+        ) : (
+          <div className="mb-5 flex justify-center">
+            <WeddingRingsIcon className="h-11 w-11" />
+          </div>
+        )}
 
         <h1 className="text-xl font-extrabold tracking-tight text-stone-900">
           {state === 'checking'

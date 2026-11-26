@@ -28,6 +28,7 @@ import { PublicInvitationView } from '@/components/PublicInvitationView';
 import { AdminDashboardView } from '@/components/AdminDashboardView';
 import { CommercialLandingView } from '@/components/CommercialLandingView';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
+import { BrandLoader } from '@/components/ui/BrandLoader';
 import TurnstileWidget from '@/components/TurnstileWidget';
 import { TURNSTILE_PUBLIC_SITE_KEY } from '@/lib/turnstileClient';
 import {
@@ -684,6 +685,88 @@ function WeddingAppContent() {
     }
     return {};
   });
+
+  // Server-resolved public sanitized invitation (works even when unauthenticated
+  // because /api/supabase-sync is admin-only!)
+  const [resolvedPublicInvite, setResolvedPublicInvite] = useState<{
+    clientId: string;
+    hashToken: string;
+    guest: WeddingGuest;
+    settings: WeddingSettings;
+    wishes: GuestWish[];
+  } | null>(null);
+  const [isLoadingPublicInvite, setIsLoadingPublicInvite] = useState<boolean>(
+    Boolean(urlGuestCode)
+  );
+
+  useEffect(() => {
+    const targetHash = (manualGuestLookup.code || urlGuestCode || '').trim();
+    if (!targetHash) {
+      setIsLoadingPublicInvite(false);
+      return;
+    }
+
+    // If we already resolved this exact hash from the server, keep it
+    if (resolvedPublicInvite && resolvedPublicInvite.hashToken === targetHash) {
+      setIsLoadingPublicInvite(false);
+      return;
+    }
+
+    const localMatch = resolveExactKeyAcrossWorkspaces(targetHash);
+    if (localMatch && adminUser) {
+      setPublicSelectedClientId(localMatch.clientId);
+      setManualGuestLookup({
+        to: localMatch.guest.guestName,
+        code: localMatch.hashToken,
+      });
+      setIsLoadingPublicInvite(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingPublicInvite(true);
+    fetch(`/api/invitation/public?hash=${encodeURIComponent(targetHash)}`, {
+      cache: 'no-store',
+    })
+      .then(async (res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          setIsLoadingPublicInvite(false);
+          return;
+        }
+        const data = await res.json().catch(() => null);
+        if (cancelled || !data?.success || !data?.guest || !data?.settings) {
+          setIsLoadingPublicInvite(false);
+          return;
+        }
+        setResolvedPublicInvite({
+          clientId: data.clientId || 'client-utama',
+          hashToken: data.hashToken || targetHash,
+          guest: data.guest as WeddingGuest,
+          settings: data.settings as WeddingSettings,
+          wishes: Array.isArray(data.wishes) ? (data.wishes as GuestWish[]) : [],
+        });
+        setPublicSelectedClientId(data.clientId || 'client-utama');
+        setManualGuestLookup({
+          to: data.guest.guestName,
+          code: data.hashToken || targetHash,
+        });
+        setIsLoadingPublicInvite(false);
+      })
+      .catch(() => {
+        if (!cancelled) setIsLoadingPublicInvite(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    urlGuestCode,
+    manualGuestLookup.code,
+    adminUser,
+    resolvedPublicInvite,
+    resolveExactKeyAcrossWorkspaces,
+  ]);
 
   useEffect(() => {
     if (urlGuestCode) {
@@ -2196,6 +2279,18 @@ function WeddingAppContent() {
   // Projected state for the active Public Invitation
   const activePublicClientId = publicSelectedClientId || 'client-utama';
   const activePublicState = useMemo(() => {
+    if (
+      !adminUser &&
+      resolvedPublicInvite &&
+      resolvedPublicInvite.clientId === activePublicClientId
+    ) {
+      return {
+        ...state,
+        settings: resolvedPublicInvite.settings,
+        guests: [resolvedPublicInvite.guest],
+        wishes: resolvedPublicInvite.wishes,
+      };
+    }
     if (isShowcaseDummyClientId(activePublicClientId)) {
       const baseDummy = getShowcaseDummyClientState(
         activePublicClientId,
@@ -2212,6 +2307,8 @@ function WeddingAppContent() {
     }
     return projectStateForClient(state, activePublicClientId, clientGroups);
   }, [
+    adminUser,
+    resolvedPublicInvite,
     state,
     activePublicClientId,
     clientGroups,
@@ -3964,6 +4061,10 @@ function WeddingAppContent() {
           onSwitchWorkspaceClient={handleSwitchWorkspaceClient}
           onOpenLandingPage={handleOpenLandingPage}
         />
+      ) : isLoadingPublicInvite && !resolvedPublicInvite ? (
+        <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
+          <BrandLoader size="lg" />
+        </div>
       ) : publicSelectedClientId === null ? (
         <CommercialLandingView
           primarySettings={state.settings}
@@ -4788,9 +4889,8 @@ export default function HomePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#FAF8F5] text-[#8B6914] flex flex-col items-center justify-center gap-1 text-sm font-bold">
-          <span>Memuat My Event Planner...</span>
-          <span className="text-[11px] font-medium text-[#9A742B]">by omeko42</span>
+        <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
+          <BrandLoader size="lg" />
         </div>
       }
     >

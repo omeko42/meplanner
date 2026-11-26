@@ -4917,7 +4917,7 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
     }
   };
 
-  const handleQuickLookupSubmit = (e: React.FormEvent) => {
+  const handleQuickLookupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setShowLookupSuggestions(false);
     const cleanKey = guestCodeInput.trim();
@@ -4944,6 +4944,27 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       return;
     }
 
+    // Fallback to server-side public sanitized invitation resolver
+    try {
+      const res = await fetch(
+        `/api/invitation/public?hash=${encodeURIComponent(cleanKey)}`,
+        { cache: 'no-store' }
+      );
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.success && data?.guest) {
+        setLookupGateError(null);
+        setIsGuestLookupModalOpen(false);
+        onSelectClientInvitation(
+          data.clientId || 'client-utama',
+          data.guest.guestName,
+          data.hashToken || cleanKey
+        );
+        return;
+      }
+    } catch {
+      // Fall through to error message
+    }
+
     setLookupGateError(
       lang === 'ID'
         ? 'Key undangan tidak valid atau tidak ditemukan. Pastikan Anda memasukkan Key unik yang dikirimkan kepada Anda.'
@@ -4966,9 +4987,13 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
       mainEv?.datetime ||
       activeDummyState.settings.weddingDatetime ||
       '2026-12-19T09:00:00+07:00';
+    const parsedTarget = new Date(targetIso).getTime();
+    const effectiveTarget =
+      Number.isFinite(parsedTarget) && parsedTarget > Date.now()
+        ? parsedTarget
+        : Date.now() + 28 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000;
     const updatePhoneTimer = () => {
-      const target = new Date(targetIso).getTime();
-      const diff = Math.max(0, target - Date.now());
+      const diff = Math.max(0, effectiveTarget - Date.now());
       setPhoneLiveCountdown({
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff / (1000 * 60 * 60)) % 24),

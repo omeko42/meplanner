@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { consumePendingRegistration, serverStore } from '@/lib/serverStore';
-import { createSessionToken } from '@/lib/auth';
+import { createSessionToken, type SessionUser } from '@/lib/auth';
 import { setSessionCookie } from '@/lib/authSession';
 import { apiError } from '@/lib/apiGuard';
+import { saveStateToSupabase } from '@/lib/supabaseCloud';
+import { ensureDefaultTenant } from '@/lib/tenantResolver';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,9 +55,15 @@ export async function GET(req: NextRequest) {
         clientId: registration.clientId,
         clientName: registration.clientName,
       });
+      await saveStateToSupabase(serverStore.getFullState()).catch(() => null);
     }
 
-    const sessionUser = {
+    const tenantId = await ensureDefaultTenant(
+      registration.clientId,
+      registration.clientName
+    );
+
+    const sessionUser: SessionUser = {
       id: registration.userId,
       username: registration.username,
       nama: registration.nama,
@@ -65,6 +73,7 @@ export async function GET(req: NextRequest) {
       isDefaultUser: true,
       clientId: registration.clientId,
       clientName: registration.clientName,
+      ...(tenantId ? { tenantId } : {}),
     };
 
     const response = NextResponse.json({

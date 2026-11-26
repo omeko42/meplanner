@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, KeyRound, Mail, ShieldCheck } from 'lucide-react';
 import TurnstileWidget from '@/components/TurnstileWidget';
+import { BrandLoader } from '@/components/ui/BrandLoader';
 import { TURNSTILE_PUBLIC_SITE_KEY } from '@/lib/turnstileClient';
 
 function ResetPasswordContent() {
@@ -109,7 +110,7 @@ function ResetPasswordContent() {
 
   return (
     <main className="min-h-screen bg-[#FAF8F5] text-stone-800 flex flex-col justify-between px-4 py-8">
-      <div className="max-w-md w-full mx-auto">
+      <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto">
         <Link
           href="/login"
           className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-[#8B6914] transition-colors mb-6"
@@ -118,7 +119,7 @@ function ResetPasswordContent() {
           <span>Kembali ke Halaman Login</span>
         </Link>
 
-        <div className="bg-white rounded-3xl border border-[#D4AF37]/40 shadow-[0_20px_50px_rgba(140,115,75,0.12)] overflow-hidden">
+        <div className="bg-white rounded-3xl border border-[#D4AF37]/40 shadow-[0_20px_50px_rgba(140,115,75,0.12)] overflow-hidden animate-meplan-enter">
           <div className="px-6 py-6 bg-gradient-to-br from-[#FAF3E3] via-[#FFFDF9] to-[#F7ECDA] border-b border-[#D4AF37]/30">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/85 border border-[#D4AF37]/40 text-[#8B6914] text-[10px] font-extrabold uppercase tracking-wider mb-3">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -255,8 +256,8 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#FAF8F5] flex items-center justify-center text-xs text-stone-500">
-          Memuat halaman pemulihan akun...
+        <main className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
+          <BrandLoader size="lg" />
         </main>
       }
     >
