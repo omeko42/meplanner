@@ -77,6 +77,7 @@ import { toast } from 'sonner';
 import { PlannerAnalyticsCharts } from '@/components/charts/PlannerAnalyticsCharts';
 import { SessionRbacModal } from '@/components/admin/SessionRbacModal';
 import { SuperadminClientDirectory } from '@/components/admin/SuperadminClientDirectory';
+import { WorkspaceSwitcherPopover } from '@/components/admin/WorkspaceSwitcherPopover';
 import { FilterPopover } from '@/components/ui/FilterPopover';
 import {
   exportBudgetToExcel,
@@ -9689,47 +9690,33 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
               {/* LEFT SIDEBAR MENU (Separate Individual Cards on Mobile, Vertical List Card on Desktop) */}
               <div className="lg:col-span-3 lg:sticky lg:top-[120px] space-y-2.5">
-                {/* SUPERADMIN-ONLY WORKSPACE SWITCHER (Moved above Konten Undangan per Project Lead instruction) */}
+                {/* Scalable Superadmin Workspace Command Switcher (built for 1,000+ clients) */}
                 {isSuperadmin &&
                   onSwitchWorkspaceClient &&
                   effectiveClientGroups.length > 0 && (
-                    <div className="rounded-2xl bg-stone-900 border border-[#D4AF37]/50 p-3 shadow-xs space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#D4AF37] truncate">
-                          👑 Workspace Klien (Superadmin)
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-[#FAF3E3] text-[10px] font-bold whitespace-nowrap shrink-0">
-                          {effectiveClientGroups.length} Klien
-                        </span>
-                      </div>
-                      <select
-                        value={
-                          activeWorkspaceClientId ||
-                          state.settings.activeClientId ||
-                          'client-utama'
-                        }
-                        onChange={(e) => {
-                          const nextId = e.target.value;
-                          onSwitchWorkspaceClient(nextId);
-                          const grp = effectiveClientGroups.find(
-                            (g) => g.id === nextId
-                          );
-                          showToast(
-                            `✓ Beralih ke Workspace Klien: ${
-                              grp?.coupleLabel || grp?.clientName || nextId
-                            }`
-                          );
-                        }}
-                        title="Pilih Workspace Klien Aktif (Khusus Superadmin)"
-                        className="w-full px-3 py-2 rounded-xl bg-stone-950 text-[#FAF3E3] border border-[#D4AF37]/50 text-xs font-bold truncate cursor-pointer focus:outline-none"
-                      >
-                        {effectiveClientGroups.map((cg) => (
-                          <option key={cg.id} value={cg.id}>
-                            💍 {cg.coupleLabel || cg.clientName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <WorkspaceSwitcherPopover
+                      clients={effectiveClientGroups}
+                      activeClientId={
+                        activeWorkspaceClientId ||
+                        state.settings.activeClientId ||
+                        'client-utama'
+                      }
+                      variant="sidebar"
+                      enableShortcut
+                      label="Ruang Kerja Klien"
+                      onSelectClient={(nextId) => {
+                        onSwitchWorkspaceClient(nextId);
+                        const grp = effectiveClientGroups.find(
+                          (g) => g.id === nextId
+                        );
+                        showToast(
+                          `Beralih ke ruang kerja: ${
+                            grp?.coupleLabel || grp?.clientName || nextId
+                          }`
+                        );
+                      }}
+                      onOpenDirectory={() => setActiveTab('superadmin')}
+                    />
                   )}
 
                 <div className="lg:luxe-glass-surface lg:rounded-2xl overflow-hidden grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-1 gap-2 lg:gap-1 lg:p-1.5">
@@ -24956,19 +24943,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Grup Client Komersial
+                      Ruang Kerja Klien
                     </label>
-                    <select
-                      value={secClientId}
-                      onChange={(e) => setSecClientId(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
-                    >
-                      {effectiveClientGroups.map((cg) => (
-                        <option key={cg.id} value={cg.id}>
-                          [{cg.clientCode}] {cg.clientName}
-                        </option>
-                      ))}
-                    </select>
+                    <WorkspaceSwitcherPopover
+                      clients={effectiveClientGroups}
+                      activeClientId={secClientId}
+                      variant="field"
+                      onSelectClient={setSecClientId}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -25091,19 +25073,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
 
                   <div>
                     <label className="block font-medium text-stone-700 mb-1 truncate">
-                      Grup Client Komersial*
+                      Ruang Kerja Klien*
                     </label>
-                    <select
-                      value={panitiaClientId}
-                      onChange={(e) => setPanitiaClientId(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300 bg-white font-semibold text-stone-800"
-                    >
-                      {effectiveClientGroups.map((cg) => (
-                        <option key={cg.id} value={cg.id}>
-                          [{cg.clientCode}] {cg.clientName}
-                        </option>
-                      ))}
-                    </select>
+                    <WorkspaceSwitcherPopover
+                      clients={effectiveClientGroups}
+                      activeClientId={panitiaClientId}
+                      variant="field"
+                      onSelectClient={setPanitiaClientId}
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

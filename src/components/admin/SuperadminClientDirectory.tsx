@@ -51,6 +51,8 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
   const [clientTierFilter, setClientTierFilter] = useState<'ALL' | string>('ALL');
   const [clientListViewMode, setClientListViewMode] = useState<'TABLE' | 'GRID'>('TABLE');
   const [expandedClientAccountIds, setExpandedClientAccountIds] = useState<Record<string, boolean>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(15);
 
   const filteredClients = clientGroups.filter((cg) => {
     const matchesGroup =
@@ -73,6 +75,11 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
     }
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const paginatedClients = filteredClients.slice(startIdx, startIdx + pageSize);
 
   return (
     <div className="space-y-4">
@@ -98,126 +105,109 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
         </button>
       </div>
 
-      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-[#D4AF37]/35 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              type="button"
-              onClick={() => onSelectClientGroupFilter('ALL')}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
-                selectedClientGroupFilter === 'ALL'
-                  ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
-                  : 'bg-white border border-stone-200 text-stone-600 hover:border-[#D4AF37]/50'
-              }`}
-            >
-              Semua ({clientGroups.length})
-            </button>
-            {clientGroups.map((cg) => {
-              const countDefault = defaultSystemUsers.filter(
-                (u) => (u.clientId || 'client-utama') === cg.id
-              ).length;
-              const isSelected = selectedClientGroupFilter === cg.id;
-              return (
-                <button
-                  key={cg.id}
-                  type="button"
-                  onClick={() => onSelectClientGroupFilter(cg.id)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-gradient-to-r from-[#C5A059] to-[#B68D40] text-white shadow-2xs'
-                      : 'bg-white border border-[#D4AF37]/35 text-[#8B6914] hover:bg-[#FAF3E3]'
-                  }`}
-                >
-                  <span>{(cg.coupleLabel || cg.clientName || '').replace(/â€¢/g, '•')}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[9px] ${
-                      isSelected ? 'bg-white/25 text-white' : 'bg-[#FAF3E3] text-[#8B6914]'
-                    }`}
-                  >
-                    {countDefault} Akun
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-stone-200 shrink-0 self-end sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setClientListViewMode('TABLE')}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                clientListViewMode === 'TABLE'
-                  ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <Table className="w-3 h-3" />
-              <span>Tabel</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setClientListViewMode('GRID')}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                clientListViewMode === 'GRID'
-                  ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              <LayoutGrid className="w-3 h-3" />
-              <span>Kartu</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="p-3 rounded-2xl bg-[#FAF8F5] border border-stone-200/90 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={clientSearchTerm}
-              onChange={(e) => setClientSearchTerm(e.target.value)}
-              placeholder="Cari nama klien, kode, atau pasangan..."
-              className="w-full pl-8 pr-3 py-2 rounded-xl border border-stone-200 bg-white text-xs font-medium placeholder:text-stone-400 focus:outline-none focus:border-[#D4AF37]"
+              onChange={(e) => {
+                setClientSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder={`Cari dari ${clientGroups.length.toLocaleString('id-ID')} klien (nama, kode, tanggal)...`}
+              className="w-full pl-8 pr-7 py-2 rounded-xl border border-stone-200 bg-white text-xs font-medium placeholder:text-stone-400 focus:outline-none focus:border-[#D4AF37]"
             />
             {clientSearchTerm && (
               <button
                 type="button"
-                onClick={() => setClientSearchTerm('')}
+                onClick={() => {
+                  setClientSearchTerm('');
+                  setCurrentPage(1);
+                }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
               >
                 <X className="w-3 h-3" />
               </button>
             )}
           </div>
-          <FilterPopover
-            align="right"
-            groups={[
-              {
-                id: 'tier',
-                label: 'Paket Klien',
-                value: clientTierFilter,
-                onChange: setClientTierFilter,
-                options: [
-                  { value: 'ALL', label: 'Semua Paket', count: clientGroups.length },
-                  {
-                    value: 'ROYAL_VIP',
-                    label: 'Enterprise / Mitra',
-                    count: clientGroups.filter((c) => c.packageTier === 'ROYAL_VIP').length,
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedClientGroupFilter !== 'ALL' && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectClientGroupFilter('ALL');
+                  setCurrentPage(1);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#FAF3E3] border border-[#D4AF37]/50 text-[#8B6914] text-[11px] font-semibold cursor-pointer"
+              >
+                <span>Klien Terpilih</span>
+                <X className="w-3 h-3" />
+              </button>
+            )}
+
+            <FilterPopover
+              align="right"
+              groups={[
+                {
+                  id: 'tier',
+                  label: 'Paket Klien',
+                  value: clientTierFilter,
+                  onChange: (val) => {
+                    setClientTierFilter(val);
+                    setCurrentPage(1);
                   },
-                  {
-                    value: 'EXCLUSIVE',
-                    label: 'Business',
-                    count: clientGroups.filter((c) => c.packageTier === 'EXCLUSIVE').length,
-                  },
-                  {
-                    value: 'STARTER',
-                    label: 'Gratis / Premium',
-                    count: clientGroups.filter((c) => c.packageTier === 'STARTER').length,
-                  },
-                ],
-              },
-            ]}
-          />
+                  options: [
+                    { value: 'ALL', label: 'Semua Paket', count: clientGroups.length },
+                    {
+                      value: 'ROYAL_VIP',
+                      label: 'Enterprise / Mitra',
+                      count: clientGroups.filter((c) => c.packageTier === 'ROYAL_VIP').length,
+                    },
+                    {
+                      value: 'EXCLUSIVE',
+                      label: 'Business',
+                      count: clientGroups.filter((c) => c.packageTier === 'EXCLUSIVE').length,
+                    },
+                    {
+                      value: 'STARTER',
+                      label: 'Gratis / Premium',
+                      count: clientGroups.filter((c) => c.packageTier === 'STARTER').length,
+                    },
+                  ],
+                },
+              ]}
+            />
+
+            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-stone-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => setClientListViewMode('TABLE')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  clientListViewMode === 'TABLE'
+                    ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <Table className="w-3 h-3" />
+                <span>Tabel</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setClientListViewMode('GRID')}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  clientListViewMode === 'GRID'
+                    ? 'bg-stone-900 text-[#FAF3E3] shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                <LayoutGrid className="w-3 h-3" />
+                <span>Kartu</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -253,7 +243,7 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100">
-                {filteredClients.map((cg) => {
+                {paginatedClients.map((cg) => {
                   const groupDefaultUsers = defaultSystemUsers.filter(
                     (u) => (u.clientId || 'client-utama') === cg.id
                   );
@@ -421,7 +411,7 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {filteredClients.map((cg) => {
+          {paginatedClients.map((cg) => {
             const groupDefaultUsers = defaultSystemUsers.filter(
               (u) => (u.clientId || 'client-utama') === cg.id
             );
@@ -542,6 +532,62 @@ export const SuperadminClientDirectory: React.FC<SuperadminClientDirectoryProps>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {filteredClients.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-3 py-2.5 rounded-2xl bg-white border border-stone-200 text-xs">
+          <div className="flex items-center gap-2 text-stone-600">
+            <span>
+              Menampilkan{' '}
+              <strong className="text-stone-900">
+                {startIdx + 1}–{Math.min(startIdx + pageSize, filteredClients.length)}
+              </strong>{' '}
+              dari{' '}
+              <strong className="text-stone-900">
+                {filteredClients.length.toLocaleString('id-ID')}
+              </strong>{' '}
+              klien
+            </span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              aria-label="Jumlah klien per halaman"
+              className="px-2 py-1 rounded-lg border border-stone-200 bg-[#FAF8F5] text-[11px] font-semibold text-stone-700 cursor-pointer"
+            >
+              {[15, 30, 50, 100].map((n) => (
+                <option key={n} value={n}>
+                  {n} / hal
+                </option>
+              ))}
+            </select>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40 font-semibold text-[11px] cursor-pointer"
+              >
+                Prev
+              </button>
+              <span className="px-2.5 py-1 text-[11px] font-bold text-stone-700">
+                {safePage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-2.5 py-1 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 disabled:opacity-40 font-semibold text-[11px] cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
