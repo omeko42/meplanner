@@ -119,11 +119,12 @@ export const SUPABASE_BUCKET_NAME =
  * the world could be forged.
  */
 export const AUTH_SECRET = (() => {
+  if (!isServerRuntime) return '';
   const value = readOptional('AUTH_SECRET');
   if (value && value.length >= 32) return value;
   if (isProduction) {
-    // Fail closed: a known-or-guessable signing secret means every session
-    // in the world can be forged.
+    // Fail closed on the server: a known-or-guessable signing secret means
+    // every session in the world can be forged.
     throw new Error(
       '[env] AUTH_SECRET must be set to a random string of at least 32 characters in production.'
     );
