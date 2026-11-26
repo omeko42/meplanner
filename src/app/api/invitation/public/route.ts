@@ -2,10 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { serverStore } from '@/lib/serverStore';
 import { apiError, rateLimitByIp } from '@/lib/apiGuard';
 import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_ROW_ID,
+  SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_TABLE_NAME,
+  SUPABASE_URL,
+} from '@/lib/env';
+import {
   computeGuestInvitationHash,
   resolveGuestByHashTokenAcrossWorkspaces,
 } from '@/lib/guestTokenHash';
-import type { GuestWish, WeddingGuest, WeddingSettings } from '@/types';
+import type {
+  GuestWish,
+  WeddingDatabaseSchema,
+  WeddingGuest,
+  WeddingSettings,
+} from '@/types';
+
+async function loadCloudStateDirect(): Promise<WeddingDatabaseSchema | null> {
+  const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  if (!key || !SUPABASE_URL) return null;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${encodeURIComponent(
+        SUPABASE_ROW_ID
+      )}&select=data`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      }
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json().catch(() => [])) as Array<{
+      data?: WeddingDatabaseSchema;
+    }>;
+    return rows?.[0]?.data || null;
+  } catch {
+    return null;
+  }
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -78,8 +118,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    await serverStore.reconcileWithSupabase();
-    const state = serverStore.getFullState(true);
+    const cloudState = await loadCloudStateDirect();
+    const state = cloudState || serverStore.getFullState(true);
 
     const workspaces: Array<{
       clientId: string;
