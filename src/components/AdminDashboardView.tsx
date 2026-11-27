@@ -22190,53 +22190,26 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       </main>
 
       {/* ===================================================================
-          FOOTER CREDIT & CONTACT US (FULL-WIDTH EDGE-TO-EDGE MATCHING KATALOG)
+          CLEAN EXECUTIVE WORKSPACE FOOTER (STASHINME-ALIGNED)
          =================================================================== */}
-      <footer className="mt-auto w-full bg-white border-t border-stone-200/90 pt-6 pb-20 sm:py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="flex items-center justify-center shrink-0">
-              <WeddingRingsIcon
-                className="w-8 h-8"
-                logoUrl={
-                  (settingsForm as any).brandLogoUrl ||
-                  (state.settings as any).brandLogoUrl
-                }
-              />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <p className="text-xs sm:text-sm font-extrabold text-stone-900 tracking-wide">
-                  MEPlanner &mdash; My Event Planner by{' '}
-                  <a
-                    href={(() => {
-                      const raw = (
-                        settingsForm.developerCreditUrl ??
-                        state.settings.developerCreditUrl
-                      )?.trim();
-                      return !raw || /github\.com\/omeko11/i.test(raw)
-                        ? 'https://github.com/omeko42'
-                        : raw;
-                    })()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#8B6914] hover:text-[#B68D40] underline decoration-[#D4AF37]/60 underline-offset-2"
-                    >
-                      omeko42
-                    </a>{' '}
-                    &copy; 2026
-                  </p>
-                </div>
-                <p className="text-[11px] text-stone-500 mt-0.5">
-                  Platform Undangan Digital &amp; Manajemen Acara Terpadu
-                </p>
-              </div>
-            </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
-            <span className="text-[10px] uppercase tracking-widest font-extrabold text-[#8B6914]">
-              HUBUNGI KAMI:
+      <footer className="mt-auto w-full bg-[#FAF8F5] border-t border-stone-200/80 pt-6 pb-20 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-stone-500">
+          <div className="flex items-center gap-2.5">
+            <WeddingRingsIcon
+              className="w-6 h-6 shrink-0"
+              logoUrl={
+                (settingsForm as any).brandLogoUrl ||
+                (state.settings as any).brandLogoUrl
+              }
+            />
+            <span className="font-semibold text-stone-800">
+              ME<span className="text-[#8B6914]">Planner</span>
             </span>
+            <span className="text-stone-300">&middot;</span>
+            <span>&copy; 2026 All rights reserved.</span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
             <a
               href={`mailto:${
                 (
@@ -22244,39 +22217,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   state.settings.contactBusinessEmail
                 )?.trim() || 'e98.bisnis@gmail.com'
               }`}
-              title={`Email Bisnis & Layanan Resmi MEPlanner (${
-                (
-                  settingsForm.contactBusinessEmail ??
-                  state.settings.contactBusinessEmail
-                )?.trim() || 'e98.bisnis@gmail.com'
-              })`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-[#D4AF37]/45 text-stone-800 text-xs font-bold transition-all shadow-2xs"
+              className="font-medium text-stone-600 hover:text-stone-950 transition-colors"
             >
-              <span>✉️</span>
-              <span>
-                {(
-                  settingsForm.contactBusinessEmail ??
-                  state.settings.contactBusinessEmail
-                )?.trim() || 'e98.bisnis@gmail.com'}
-              </span>
+              {(
+                settingsForm.contactBusinessEmail ??
+                state.settings.contactBusinessEmail
+              )?.trim() || 'e98.bisnis@gmail.com'}
             </a>
-
+            <a
+              href={(() => {
+                const raw = (
+                  settingsForm.developerCreditUrl ??
+                  state.settings.developerCreditUrl
+                )?.trim();
+                return !raw || /github\.com\/omeko11/i.test(raw)
+                  ? 'https://github.com/omeko42/meplanner'
+                  : raw;
+              })()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-stone-950 transition-colors"
+            >
+              GitHub
+            </a>
             <a
               href="https://www.linkedin.com/in/omeko42"
               target="_blank"
               rel="noopener noreferrer"
-              title="LinkedIn Resmi MEPlanner (omeko42)"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-bold transition-all shadow-2xs"
+              className="hover:text-stone-950 transition-colors"
             >
-              <svg
-                className="w-3.5 h-3.5 fill-current shrink-0"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-              </svg>
-              <span>LinkedIn</span>
+              LinkedIn
             </a>
+            <a
+              href="/privacy"
+              className="hover:text-stone-950 transition-colors"
+            >
+              Kebijakan Privasi
+            </a>
+            <a
+              href="/terms"
+              className="hover:text-stone-950 transition-colors"
+            >
+              Syarat &amp; Ketentuan
+            </a>
+            <span className="text-stone-400">v1.0 &middot; Built in Indonesia</span>
           </div>
         </div>
       </footer>

@@ -26,6 +26,8 @@ import {
   Lock,
   ArrowLeft,
   ArrowRight,
+  ArrowUpRight,
+  FlaskConical,
   RefreshCw,
   AlertTriangle,
   FileCheck2,
@@ -5697,85 +5699,59 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
 
   return (
     <div className="min-h-screen pt-16 sm:pt-18 overflow-x-clip bg-white text-stone-900 flex flex-col justify-between selection:bg-[#D4AF37]/25">
-      {/* CLEAN TOP NAVBAR — MEPLANNER ORIGINAL WARM EDITORIAL HEADER */}
-      <header className="fixed top-0 inset-x-0 z-50 luxe-glass-navbar">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-3">
-          {/* Left: Logo + MEPlanner (My Event Planner) */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <button
-              type="button"
+      {/* MINIMAL EXECUTIVE TOP NAVBAR */}
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-stone-200/80 bg-white/85 backdrop-blur-xl">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          {/* Left: Clean Brand Logo + Wordmark */}
+          <button
+            type="button"
+            onClick={() => setIsCheckoutPageOpen(false)}
+            className="flex items-center gap-2.5 shrink-0 cursor-pointer group"
+            title="MEPlanner — My Event Planner"
+          >
+            <WeddingRingsIcon
+              className="w-8 h-8 transition-transform duration-200 group-hover:scale-105"
+              logoUrl={(primarySettings as any).brandLogoUrl}
+            />
+            <span className="font-sans text-[16px] font-bold tracking-tight text-stone-950">
+              ME<span className="text-[#8B6914]">Planner</span>
+            </span>
+          </button>
+
+          {/* Center: Quiet 4-item Editorial Nav */}
+          <nav className="hidden md:flex items-center gap-6">
+            <a
+              href="#tema"
               onClick={() => setIsCheckoutPageOpen(false)}
-              className="flex items-center justify-center shrink-0 hover:scale-105 transition-transform cursor-pointer"
-              title="MEPlanner — My Event Planner"
+              className="text-[13px] font-medium text-stone-600 hover:text-stone-950 transition-colors"
             >
-              <WeddingRingsIcon
-                className="w-8 h-8 sm:w-9 sm:h-9"
-                logoUrl={(primarySettings as any).brandLogoUrl}
-              />
-            </button>
-            <div className="min-w-0">
-              <button
-                type="button"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="font-sans font-extrabold text-base sm:text-xl text-stone-900 tracking-tight leading-none text-left block cursor-pointer"
-              >
-                ME<span className="text-[#8B6914]">Planner</span>
-              </button>
-              <p className="text-[10px] sm:text-[11px] font-medium text-stone-500 leading-tight truncate mt-0.5">
-                {lang === 'ID'
-                  ? 'My Event Planner • Undangan & Manajemen Acara'
-                  : 'My Event Planner • Event & Invitation Platform'}
-              </p>
-            </div>
-          </div>
+              {lang === 'ID' ? 'Tema' : 'Themes'}
+            </a>
+            <a
+              href="#fitur"
+              onClick={() => setIsCheckoutPageOpen(false)}
+              className="text-[13px] font-medium text-stone-600 hover:text-stone-950 transition-colors"
+            >
+              {lang === 'ID' ? 'Fitur' : 'Features'}
+            </a>
+            <a
+              href="#paket"
+              onClick={() => setIsCheckoutPageOpen(false)}
+              className="text-[13px] font-medium text-stone-600 hover:text-stone-950 transition-colors"
+            >
+              {lang === 'ID' ? 'Harga' : 'Pricing'}
+            </a>
+            <a
+              href="#faq"
+              onClick={() => setIsCheckoutPageOpen(false)}
+              className="text-[13px] font-medium text-stone-600 hover:text-stone-950 transition-colors"
+            >
+              FAQ
+            </a>
+          </nav>
 
-          {/* Right: Clean Text Links + Cek Undangan + ID/EN + Solid Charcoal Login Button */}
-          <div className="flex items-center gap-3 sm:gap-6 shrink-0">
-            <nav className="hidden md:flex items-center gap-5 lg:gap-6">
-              <a
-                href="#"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                {lang === 'ID' ? 'Beranda' : 'Home'}
-              </a>
-              <a
-                href="#tema"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                {lang === 'ID' ? 'Katalog Tema' : 'Themes'}
-              </a>
-              <a
-                href="#fitur"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                {lang === 'ID' ? 'Ekosistem' : 'Features'}
-              </a>
-              <a
-                href="#paket"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                {lang === 'ID' ? 'Paket Lisensi' : 'Pricing'}
-              </a>
-              <a
-                href="#blog"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                {lang === 'ID' ? 'Panduan' : 'Guides'}
-              </a>
-              <a
-                href="#faq"
-                onClick={() => setIsCheckoutPageOpen(false)}
-                className="text-sm font-medium text-stone-700 hover:text-[#8B6914] transition-colors"
-              >
-                FAQ
-              </a>
-            </nav>
-
+          {/* Right: Compact Utility & Action Group */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -5783,21 +5759,38 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                 setGuestCodeInput('');
                 setIsGuestLookupModalOpen(true);
               }}
-              className="text-xs sm:text-sm font-semibold text-stone-700 hover:text-[#8B6914] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-950 transition-colors cursor-pointer"
               title={
                 lang === 'ID'
-                  ? 'Cek Undangan dengan Key Unik'
-                  : 'Check Invitation by Unique Key'
+                  ? 'Buka undangan dengan kode akses'
+                  : 'Open invitation with access code'
               }
             >
               <KeyRound className="w-3.5 h-3.5 text-[#8B6914] shrink-0" />
-              <span>{lang === 'ID' ? 'Cek Undangan' : 'Check Invitation'}</span>
+              <span>{lang === 'ID' ? 'Cek Undangan' : 'Invitation'}</span>
             </button>
+
+            {onOpenDemoManager && (
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenDemoManager(
+                    activeDummyMeta.id,
+                    'GRATIS',
+                    activeCatalogTheme?.id
+                  )
+                }
+                className="hidden lg:inline-flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-[12px] font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-950 transition-colors cursor-pointer"
+              >
+                <FlaskConical className="w-3.5 h-3.5 text-[#8B6914]" />
+                <span>{lang === 'ID' ? 'Coba Demo' : 'Try Demo'}</span>
+              </button>
+            )}
 
             <button
               type="button"
               onClick={() => setLang((prev) => (prev === 'ID' ? 'EN' : 'ID'))}
-              className="text-xs sm:text-sm font-semibold text-stone-600 hover:text-[#8B6914] transition-colors cursor-pointer"
+              className="rounded-xl border border-stone-200/90 bg-stone-50/80 px-2.5 py-1.5 text-[11px] font-semibold text-stone-700 hover:border-stone-300 hover:text-stone-950 transition-colors cursor-pointer"
               title={
                 lang === 'ID'
                   ? 'Switch Language to English (EN)'
@@ -5810,14 +5803,25 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             <button
               type="button"
               onClick={() => onOpenAdminPortal()}
-              className="px-5 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-sm font-bold shadow-xs transition-all cursor-pointer"
+              className="rounded-xl px-3 py-2 text-[12px] font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-950 transition-colors cursor-pointer"
             >
               {isAdminLoggedIn
-                ? lang === 'ID'
-                  ? 'Planner'
-                  : 'Planner'
-                : 'Login'}
+                ? 'Planner'
+                : lang === 'ID'
+                  ? 'Masuk'
+                  : 'Sign In'}
             </button>
+
+            {!isAdminLoggedIn && (
+              <button
+                type="button"
+                onClick={() => onOpenAdminPortal()}
+                className="inline-flex items-center gap-1 rounded-xl bg-stone-950 hover:bg-stone-800 px-3.5 py-2 text-[12px] font-semibold text-white transition-all cursor-pointer"
+              >
+                <span>{lang === 'ID' ? 'Daftar' : 'Sign Up'}</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -7020,40 +7024,39 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
           /* MAIN LANDING PAGE VIEW — 100% ORIGINAL CLEAN LUXURY MEPLANNER */
           <>
             {/* ================================================================= */}
-            {/* SECTION 1: ORIGINAL MULTI-EVENT SPLIT HERO WITH IPHONE 15 PRO     */}
+            {/* SECTION 1: EDITORIAL MULTI-EVENT SPLIT HERO                       */}
             {/* ================================================================= */}
-            <section className="bg-[#FAF8F5] py-14 sm:py-20 border-b border-stone-200/80">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            <section className="relative bg-[#FAF8F5] py-14 sm:py-20 lg:py-24 border-b border-stone-200/80 overflow-hidden">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(ellipse_60%_50%_at_50%_-15%,rgba(197,160,89,0.14),transparent)]"
+              />
+              <div className="relative max-w-6xl mx-auto px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
                 {/* Left 7 Cols */}
-                <div className="lg:col-span-7 text-left">
-                  {/* Interactive 5-Category Switcher Pills at Top of Hero */}
-                  <div className="flex flex-wrap items-center gap-2 mb-6">
+                <div className="lg:col-span-7 text-left space-y-6">
+                  {/* Segmented 5-Category Switcher */}
+                  <div className="inline-flex flex-wrap items-center gap-1 rounded-2xl border border-stone-200/90 bg-white/90 p-1 shadow-2xs">
                     {(
                       [
                         {
                           id: 'WEDDING' as const,
-                          label:
-                            lang === 'ID' ? '💍 Pernikahan' : '💍 Wedding',
+                          label: lang === 'ID' ? 'Pernikahan' : 'Wedding',
                         },
                         {
                           id: 'BIRTHDAY' as const,
-                          label:
-                            lang === 'ID' ? '🎂 Ulang Tahun' : '🎂 Birthday',
+                          label: lang === 'ID' ? 'Ulang Tahun' : 'Birthday',
                         },
                         {
                           id: 'GRADUATION' as const,
-                          label:
-                            lang === 'ID' ? '🎓 Wisuda' : '🎓 Graduation',
+                          label: lang === 'ID' ? 'Wisuda' : 'Graduation',
                         },
                         {
                           id: 'MEETING' as const,
-                          label:
-                            lang === 'ID' ? '🏛️ Rapat Resmi' : '🏛️ Summit',
+                          label: lang === 'ID' ? 'Rapat Resmi' : 'Summit',
                         },
                         {
                           id: 'GALA_DINNER' as const,
-                          label:
-                            lang === 'ID' ? '🥂 Gala Dinner' : '🥂 Gala Dinner',
+                          label: 'Gala Dinner',
                         },
                       ] as const
                     ).map((cat) => {
@@ -7076,10 +7079,10 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                               setSimThemeOverride(firstTheme.themePreset);
                             }
                           }}
-                          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all cursor-pointer ${
                             isCatActive
-                              ? 'bg-stone-900 text-white shadow-xs'
-                              : 'bg-white hover:bg-[#FAF3E3] text-stone-700 border border-stone-200/90'
+                              ? 'bg-stone-950 text-white shadow-2xs'
+                              : 'text-stone-600 hover:text-stone-950 hover:bg-stone-100/80'
                           }`}
                         >
                           {cat.label}
@@ -7088,42 +7091,29 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     })}
                   </div>
 
-                  <h1 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-bold text-stone-900 leading-[1.15] tracking-tight">
+                  <h1 className="font-editorial text-3xl sm:text-5xl lg:text-[50px] font-bold text-stone-950 leading-[1.1] tracking-tight">
                     {lang === 'ID'
-                      ? 'Rancang Undangan Eksklusif & Kelola Seluruh Acara dalam Satu Ruang Kerja'
-                      : 'Design Exclusive Digital Invitations & Manage Your Entire Event in One Workspace'}
+                      ? 'Undangan eksklusif, tamu VIP, dan persiapan acara dalam satu ruang kerja.'
+                      : 'Exclusive invitations, VIP guests, and event planning in one workspace.'}
                   </h1>
 
-                  <p className="text-stone-600 text-sm sm:text-base leading-relaxed mt-5 max-w-xl">
+                  <p className="text-stone-600 text-[15px] leading-relaxed max-w-lg">
                     {lang === 'ID'
-                      ? 'Dirancang khusus untuk Pernikahan, Ulang Tahun, Wisuda, Rapat Resmi hingga Gala Dinner. Pilih tema dari katalog, sesuaikan langsung di ruang kerja Planner, dan bagikan undangan berproteksi Key unik kepada setiap tamu kehormatan.'
-                      : 'Purpose-built for Weddings, Birthdays, Graduations, Official Summits, and Gala Dinners. Pick a catalog theme, customize live in your Planner workspace, and share Key-protected invitations with every honored guest.'}
+                      ? 'Pilih desain dari katalog tema, atur daftar tamu & konfirmasi kehadiran, kelola anggaran, hingga kirim undangan personal via WhatsApp tanpa repot.'
+                      : 'Choose from curated catalog themes, manage guest lists & RSVPs, track event budgets, and send personal WhatsApp invitations effortlessly.'}
                   </p>
 
-                  {/* 2 Clean CTA Buttons */}
-                  <div className="mt-7 flex flex-wrap items-center gap-3.5">
+                  {/* Crisp 3-Action CTA Row */}
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
                     <button
                       type="button"
                       onClick={() => onOpenAdminPortal()}
-                      className="px-6 py-3.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-sm shadow-sm transition-all cursor-pointer"
+                      className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-stone-950 hover:bg-stone-800 text-white font-semibold text-[13px] shadow-md shadow-stone-950/10 transition-all cursor-pointer"
                     >
-                      {lang === 'ID'
-                        ? 'Mulai Buat Acara (Gratis)'
-                        : 'Start Creating (Free)'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document
-                          .getElementById('tema')
-                          ?.scrollIntoView({ behavior: 'smooth' })
-                      }
-                      className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/60 font-bold text-sm transition-all cursor-pointer"
-                    >
-                      {lang === 'ID'
-                        ? 'Jelajahi Katalog Tema'
-                        : 'Explore Theme Catalog'}
+                      <span>
+                        {lang === 'ID' ? 'Mulai Gratis' : 'Start Free'}
+                      </span>
+                      <ArrowRight className="w-4 h-4" />
                     </button>
 
                     {onOpenDemoManager && (
@@ -7136,52 +7126,58 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             activeCatalogTheme?.id
                           )
                         }
-                        className="px-5 py-3.5 rounded-xl bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] border border-[#D4AF37]/65 font-extrabold text-sm shadow-2xs transition-all cursor-pointer inline-flex items-center gap-2"
+                        className="inline-flex items-center gap-1.5 px-5 py-3 rounded-2xl border border-[#C5A059]/45 bg-[#FAF3E3]/70 hover:bg-[#FAF3E3] text-[#8B6914] font-semibold text-[13px] transition-all cursor-pointer"
                       >
-                        <Sparkles className="w-4 h-4 text-[#B68D40]" />
+                        <FlaskConical className="w-3.5 h-3.5" />
                         <span>
-                          {lang === 'ID'
-                            ? 'Coba Demo Studio'
-                            : 'Try Interactive Demo'}
+                          {lang === 'ID' ? 'Coba Demo' : 'Try Demo'}
                         </span>
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        document
+                          .getElementById('tema')
+                          ?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                      className="px-5 py-3 rounded-2xl border border-stone-300/90 bg-white hover:border-stone-400 text-stone-800 font-semibold text-[13px] transition-all cursor-pointer"
+                    >
+                      {lang === 'ID' ? 'Lihat Katalog' : 'Browse Themes'}
+                    </button>
                   </div>
 
-                  {/* 3 Authentic MEPlanner Highlights */}
-                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl">
-                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
-                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                        {lang === 'ID' ? '5 Kategori Acara' : '5 Event Types'}
+                  {/* Understated Editorial Highlights Rail */}
+                  <div className="pt-4 grid grid-cols-3 gap-4 max-w-lg border-t border-stone-200/80">
+                    <div>
+                      <p className="text-sm sm:text-base font-bold text-stone-950 tabular-nums">
+                        5 {lang === 'ID' ? 'Kategori' : 'Categories'}
                       </p>
                       <p className="text-[11px] text-stone-500 mt-0.5">
                         {lang === 'ID'
-                          ? 'Nikah • Ultah • Wisuda • Rapat • Gala'
-                          : 'Wedding • Birthday • Grad • Summit • Gala'}
+                          ? 'Nikah, Ultah, Wisuda, Gala'
+                          : 'Wedding, Gala & Summit'}
                       </p>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
-                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                        {lang === 'ID'
-                          ? '31 Tema Interaktif'
-                          : '31 Interactive Themes'}
+                    <div>
+                      <p className="text-sm sm:text-base font-bold text-stone-950 tabular-nums">
+                        31 {lang === 'ID' ? 'Desain' : 'Themes'}
                       </p>
                       <p className="text-[11px] text-stone-500 mt-0.5">
                         {lang === 'ID'
-                          ? 'Sinkron Langsung ke Planner'
-                          : 'Synced Live to Planner'}
+                          ? 'Sinkron langsung ke acara'
+                          : 'Live studio sync'}
                       </p>
                     </div>
-                    <div className="p-3.5 rounded-2xl bg-white border border-stone-200/90 shadow-2xs">
-                      <p className="text-xs sm:text-sm font-extrabold text-stone-900">
-                        {lang === 'ID'
-                          ? 'Proteksi Key Unik'
-                          : 'Unique Key Protection'}
+                    <div>
+                      <p className="text-sm sm:text-base font-bold text-stone-950">
+                        {lang === 'ID' ? 'Privat & Aman' : 'Private Access'}
                       </p>
                       <p className="text-[11px] text-stone-500 mt-0.5">
                         {lang === 'ID'
-                          ? 'Akses Tamu Privat & Aman'
-                          : 'Private & Secure Guest Access'}
+                          ? 'Tautan unik per tamu'
+                          : 'Personal guest links'}
                       </p>
                     </div>
                   </div>
@@ -7655,26 +7651,30 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
             </section>
 
             {/* ================================================================= */}
-            {/* SECTION 4: LAYAR PENERIMA TAMU & CHECK-IN HARI-H (GUEST RECEPTION)*/}
+            {/* SECTION 4: LAYAR PENERIMA TAMU & CHECK-IN HARI-H                  */}
             {/* ================================================================= */}
-            <section className="py-10 bg-white border-b border-stone-200/80">
-              <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="rounded-3xl bg-gradient-to-r from-stone-900 via-stone-800 to-stone-900 border border-[#D4AF37]/40 text-white p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
-                  <div className="lg:col-span-7 space-y-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#D4AF37]">
+            <section className="py-12 bg-white border-b border-stone-200/80">
+              <div className="max-w-6xl mx-auto px-4 sm:px-6">
+                <div className="relative overflow-hidden rounded-3xl bg-[#0F1419] border border-white/[0.08] text-white p-8 sm:p-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-2xl">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#C5A059]/12 blur-3xl"
+                  />
+                  <div className="relative z-10 lg:col-span-7 space-y-4">
+                    <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">
                       {lang === 'ID'
-                        ? 'LAYAR PENERIMA TAMU & CHECK-IN HARI-H'
-                        : 'EVENT-DAY GUEST RECEPTION & CHECK-IN'}
+                        ? 'PENERIMA TAMU & CHECK-IN HARI-H'
+                        : 'EVENT-DAY RECEPTION & CHECK-IN'}
                     </p>
-                    <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-white leading-tight">
+                    <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-white leading-[1.15] tracking-tight">
                       {lang === 'ID'
-                        ? 'Sambut Tamu Kehormatan dengan Check-In QR & Key Instan'
-                        : 'Welcome Honored Guests with Instant QR & Key Check-In'}
+                        ? 'Sambut tamu kehormatan dengan check-in QR instan.'
+                        : 'Welcome honored guests with instant QR check-in.'}
                     </h2>
-                    <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-xl">
+                    <p className="text-[13px] sm:text-[14px] text-zinc-400 leading-relaxed max-w-xl">
                       {lang === 'ID'
-                        ? 'Layar Penerima Tamu (Guest Reception) memudahkan tim protokol dan panitia memverifikasi kehadiran tamu VIP, nomor meja, dan kuota pax secara real-time di pintu ballroom.'
-                        : 'The Guest Reception screen empowers your protocol and usher team to verify VIP arrivals, table assignments, and pax headcount in real time at the venue entrance.'}
+                        ? 'Memudahkan panitia dan tim penerima tamu memverifikasi kehadiran tamu VIP, nomor meja, serta kuota pendamping secara real-time di lokasi acara.'
+                        : 'Empower your usher and protocol team to verify VIP arrivals, table assignments, and guest headcount in real time at the venue entrance.'}
                     </p>
                     <div className="pt-2">
                       <button
@@ -7690,44 +7690,47 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                             onOpenAdminPortal();
                           }
                         }}
-                        className="px-6 py-3 rounded-xl bg-[#8B6914] hover:bg-[#735610] text-white font-bold text-sm transition-all shadow-sm cursor-pointer"
+                        className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#C5A059] hover:bg-[#D4AF37] text-[#0B0F13] font-semibold text-[13px] transition-all cursor-pointer"
                       >
-                        {lang === 'ID'
-                          ? 'Coba Layar Penerima Tamu'
-                          : 'Try Guest Reception Screen'}
+                        <span>
+                          {lang === 'ID'
+                            ? 'Coba Layar Penerima Tamu'
+                            : 'Try Reception Screen'}
+                        </span>
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
                   {/* Right 5 Cols: Clean Visual Preview Card of Guest Reception */}
-                  <div className="lg:col-span-5">
-                    <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-[#D4AF37]/30 p-5 space-y-4">
-                      <div className="flex items-center justify-between gap-2 border-b border-white/15 pb-3">
+                  <div className="relative z-10 lg:col-span-5">
+                    <div className="rounded-2xl bg-white/[0.04] border border-white/[0.09] p-5 space-y-4">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
                         <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                          <span className="text-xs font-bold text-white">
-                            Guest Reception Live Screen
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="text-xs font-semibold text-zinc-200">
+                            {lang === 'ID' ? 'Layar Penerima Tamu' : 'Reception Live Screen'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-[#FAF3E3]">
-                          QR &amp; Key Ready
+                        <span className="font-mono text-[10px] font-semibold text-[#D4AF37]">
+                          QR READY
                         </span>
                       </div>
-                      <div className="rounded-xl bg-white text-stone-900 p-4 flex items-center gap-3.5 shadow-md">
-                        <div className="w-12 h-12 rounded-xl bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
-                          <QrCode className="w-6 h-6" />
+                      <div className="rounded-xl bg-[#FAF8F5] text-stone-900 p-4 flex items-center gap-3.5 shadow-lg">
+                        <div className="w-11 h-11 rounded-xl bg-white text-[#8B6914] border border-[#D4AF37]/40 flex items-center justify-center shrink-0">
+                          <QrCode className="w-5 h-5" />
                         </div>
                         <div className="min-w-0">
                           <p className="text-[10px] font-bold uppercase tracking-wider text-[#8B6914]">
                             {lang === 'ID'
-                              ? 'SELAMAT DATANG TAMU KEHORMATAN'
-                              : 'WELCOME HONORED GUEST'}
+                              ? 'TAMU KEHORMATAN TERVERIFIKASI'
+                              : 'VERIFIED HONORED GUEST'}
                           </p>
-                          <p className="text-sm font-extrabold text-stone-900 truncate">
+                          <p className="text-sm font-bold text-stone-950 truncate">
                             Bpk/Ibu Tamu VIP &amp; Keluarga
                           </p>
-                          <p className="text-[11px] text-stone-600">
-                            VIP Table 01 &bull; 2 Pax Terverifikasi
+                          <p className="text-[11px] text-stone-600 tabular-nums">
+                            Meja VIP 01 &bull; 2 Pax Hadir
                           </p>
                         </div>
                       </div>
@@ -8070,6 +8073,115 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                     </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Minimalist Release Rail (StashinMe-inspired v1.0 Live + Next Phase) */}
+              <div className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between gap-4 rounded-3xl border border-[#C5A059]/35 bg-[#FAF8F5] px-6 py-4">
+                  <div>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#8B6914]">
+                      v1.0 &middot; LIVE
+                    </span>
+                    <p className="mt-0.5 text-[13px] font-medium text-stone-800">
+                      {lang === 'ID'
+                        ? '31 tema undangan · Tamu & RSVP · Broadcast WA · Anggaran · Check-in QR'
+                        : '31 invitation themes · Guest & RSVP · WhatsApp broadcast · Budget · QR check-in'}
+                    </p>
+                  </div>
+                  <span className="w-2 h-2 shrink-0 rounded-full bg-emerald-500" />
+                </div>
+
+                <div className="flex items-center justify-between gap-4 rounded-3xl border border-stone-200/90 bg-white px-6 py-4">
+                  <div>
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                      NEXT PHASE
+                    </span>
+                    <p className="mt-0.5 font-mono text-[13px] font-semibold text-stone-700">
+                      TBA
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-3 py-1 font-mono text-[10px] text-stone-500">
+                    <Lock className="w-3 h-3" />
+                    PRIVATE
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Partner Infrastructure Logos (Monochrome Logo-Only Strip Above Footer) */}
+            <section
+              aria-label="Technology Infrastructure"
+              className="mx-auto max-w-6xl px-4 sm:px-6 pb-14 pt-2"
+            >
+              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 rounded-3xl border border-stone-200/80 bg-[#FAF8F5]/80 px-6 py-6 sm:gap-x-14">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="GitHub"
+                  title="GitHub"
+                  className="text-stone-400 transition-colors hover:text-stone-900"
+                >
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14 0 1.55-.01 2.79-.01 3.17 0 .31.21.66.79.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z" />
+                  </svg>
+                </a>
+
+                <a
+                  href="https://vercel.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Vercel"
+                  title="Vercel"
+                  className="text-stone-400 transition-colors hover:text-stone-950"
+                >
+                  <svg className="h-5 w-6" viewBox="0 0 24 22" fill="currentColor" aria-hidden="true">
+                    <path d="M12 0L24 21.5H0L12 0Z" />
+                  </svg>
+                </a>
+
+                <a
+                  href="https://supabase.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Supabase"
+                  title="Supabase"
+                  className="text-stone-400 transition-colors hover:text-emerald-600"
+                >
+                  <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M13.6 22.8c-.6.8-1.9.3-1.9-.7V13h9.1c1 0 1.6 1.2.9 2l-8.1 7.8Z" />
+                    <path d="M10.4 1.2c.6-.8 1.9-.3 1.9.7V11H3.2c-1 0-1.6-1.2-.9-2l8.1-7.8Z" opacity="0.65" />
+                  </svg>
+                </a>
+
+                <a
+                  href="https://www.cloudflare.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Cloudflare"
+                  title="Cloudflare"
+                  className="text-stone-400 transition-colors hover:text-amber-500"
+                >
+                  <svg className="h-6 w-9" viewBox="0 0 36 24" fill="currentColor" aria-hidden="true">
+                    <path d="M26.8 18.5H9.2a4.6 4.6 0 0 1-.8-9.1 7.2 7.2 0 0 1 13.7-2.2 5.4 5.4 0 0 1 7.6 4.9c0 .3 0 .6-.1.9a3.2 3.2 0 0 1-2.8 5.5Z" />
+                  </svg>
+                </a>
+
+                <a
+                  href="https://cloud.google.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Google"
+                  title="Google"
+                  className="text-stone-400 transition-colors hover:text-stone-900"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M21.8 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.5a4.7 4.7 0 0 1-2 3.1v2.6h3.3c1.9-1.8 3-4.4 3-7.6Z" />
+                    <path d="M12 22c2.8 0 5.1-.9 6.8-2.5l-3.3-2.6c-.9.6-2.1 1-3.5 1-2.7 0-5-1.8-5.8-4.3H2.8v2.7A10 10 0 0 0 12 22Z" opacity="0.85" />
+                    <path d="M6.2 13.6a6 6 0 0 1 0-3.2V7.7H2.8a10 10 0 0 0 0 8.6l3.4-2.7Z" opacity="0.7" />
+                    <path d="M12 6.1c1.5 0 2.9.5 3.9 1.5l2.9-2.9A10 10 0 0 0 2.8 7.7l3.4 2.7c.8-2.5 3.1-4.3 5.8-4.3Z" opacity="0.9" />
+                  </svg>
+                </a>
               </div>
             </section>
           </>
@@ -8691,76 +8803,183 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
         </div>
       )}
 
-      {/* CLEAN FOOTER */}
-      <footer className="bg-white border-t border-stone-200/80 py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="flex items-center justify-center shrink-0">
-              <WeddingRingsIcon
-                className="w-8 h-8"
-                logoUrl={(primarySettings as any).brandLogoUrl}
-              />
-            </div>
-            <div>
-              <p className="text-xs sm:text-sm font-bold text-stone-900">
-                MEPlanner — My Event Planner by{' '}
-                <a
-                  href={developerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#8B6914] hover:underline"
-                >
-                  omeko42
-                </a>{' '}
-                &copy; 2026
-              </p>
-              <p className="text-[11px] text-stone-500 mt-0.5">
-                {lang === 'ID'
-                  ? 'Platform Undangan Digital & Manajemen Acara Terpadu'
-                  : 'Unified Digital Invitation & Event Management Platform'}
-              </p>
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 mt-1.5 text-[11px] font-semibold text-stone-500">
-                <a href="/privacy" className="hover:text-[#8B6914] hover:underline">
-                  {lang === 'ID' ? 'Kebijakan Privasi' : 'Privacy Policy'}
-                </a>
-                <span>&bull;</span>
-                <a href="/terms" className="hover:text-[#8B6914] hover:underline">
-                  {lang === 'ID' ? 'Syarat & Ketentuan' : 'Terms of Service'}
-                </a>
-                <span>&bull;</span>
-                <a href="/login" className="hover:text-[#8B6914] hover:underline">
-                  {lang === 'ID' ? 'Portal Login' : 'Login Portal'}
-                </a>
+      {/* EXECUTIVE MULTI-COLUMN FOOTER (STASHINME ARCHITECTURE) */}
+      <footer className="border-t border-white/[0.08] bg-[#080C10] text-zinc-300">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12">
+            {/* Brand */}
+            <div className="space-y-3 lg:col-span-5">
+              <div className="flex items-center gap-2.5">
+                <WeddingRingsIcon
+                  className="w-8 h-8"
+                  logoUrl={(primarySettings as any).brandLogoUrl}
+                />
+                <span className="text-[15px] font-bold tracking-tight text-white">
+                  ME<span className="text-[#D4AF37]">Planner</span>
+                </span>
               </div>
+              <p className="max-w-xs text-[12px] leading-relaxed text-zinc-400">
+                {lang === 'ID'
+                  ? 'Undangan digital eksklusif, buku tamu & RSVP, broadcast WhatsApp, dan perencana acara dalam satu ruang kerja.'
+                  : 'Exclusive digital invitations, VIP guestbook & RSVP, WhatsApp broadcast, and event planning in one workspace.'}
+              </p>
+              <a
+                href={mailtoGeneralSupportUrl}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:text-[#E8CB6B]"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>{businessEmail}</span>
+              </a>
+            </div>
+
+            {/* Produk */}
+            <div className="space-y-2.5 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                {lang === 'ID' ? 'Produk' : 'Product'}
+              </p>
+              <ul className="space-y-2 text-[13px] text-zinc-400">
+                {onOpenDemoManager && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onOpenDemoManager(
+                          activeDummyMeta.id,
+                          'GRATIS',
+                          activeCatalogTheme?.id
+                        )
+                      }
+                      className="transition hover:text-white cursor-pointer"
+                    >
+                      {lang === 'ID' ? 'Coba Demo' : 'Try Demo'}
+                    </button>
+                  </li>
+                )}
+                <li>
+                  <a href="#tema" className="transition hover:text-white">
+                    {lang === 'ID' ? 'Katalog Tema' : 'Theme Catalog'}
+                  </a>
+                </li>
+                <li>
+                  <a href="#paket" className="transition hover:text-white">
+                    {lang === 'ID' ? 'Paket Harga' : 'Pricing'}
+                  </a>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onOpenAdminPortal()}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    {lang === 'ID' ? 'Masuk' : 'Sign In'}
+                  </button>
+                </li>
+                <li>
+                  <a href="/login" className="transition hover:text-white">
+                    {lang === 'ID' ? 'Daftar Akun' : 'Sign Up'}
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kolaborasi */}
+            <div className="space-y-2.5 lg:col-span-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                {lang === 'ID' ? 'Kolaborasi' : 'Collaborate'}
+              </p>
+              <ul className="space-y-2 text-[13px] text-zinc-400">
+                <li>
+                  <a
+                    href="https://github.com/omeko42/meplanner"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>Contribute (GitHub)</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`mailto:${businessEmail}?subject=Partnership%20MEPlanner`}
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>
+                      {lang === 'ID' ? 'Become a Partner' : 'Become a Partner'}
+                    </span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/omeko42/meplanner/issues"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="transition hover:text-white"
+                  >
+                    {lang === 'ID'
+                      ? 'Laporkan Bug & Masukan'
+                      : 'Report Issue & Feedback'}
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kontak */}
+            <div className="space-y-2.5 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                {lang === 'ID' ? 'Kontak' : 'Contact'}
+              </p>
+              <ul className="space-y-2 text-[12px] text-zinc-400">
+                <li>
+                  <a
+                    href={mailtoGeneralSupportUrl}
+                    className="transition hover:text-white"
+                  >
+                    {businessEmail}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.linkedin.com/in/omeko42"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>LinkedIn (omeko42)</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`mailto:${businessEmail}?subject=Kemitraan%20%26%20Media%20MEPlanner`}
+                    className="transition hover:text-white"
+                  >
+                    {lang === 'ID' ? 'Kemitraan & Media' : 'Partnerships & Media'}
+                  </a>
+                </li>
+                <li className="text-zinc-500">Indonesia &middot; WIB</li>
+              </ul>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <a
-              href={mailtoGeneralSupportUrl}
-              title={`Hubungi Email Resmi MEPlanner (${businessEmail})`}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#FAF3E3] border border-stone-200 text-stone-800 text-xs font-semibold transition-all"
-            >
-              <Mail className="w-3.5 h-3.5 text-[#8B6914]" />
-              <span>{businessEmail}</span>
-            </a>
-
-            <a
-              href="https://www.linkedin.com/in/omeko42"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="LinkedIn Resmi MEPlanner (omeko42)"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#0A66C2] hover:bg-[#004182] text-white text-xs font-semibold shadow-2xs transition-all"
-            >
-              <svg
-                className="w-3.5 h-3.5 fill-current shrink-0"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+          <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] pt-6 text-[12px] text-zinc-500 sm:flex-row">
+            <span>&copy; 2026 MEPlanner. All rights reserved.</span>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <a
+                href="/privacy"
+                className="transition hover:text-zinc-200"
               >
-                <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
-              </svg>
-              <span>LinkedIn</span>
-            </a>
+                {lang === 'ID' ? 'Kebijakan Privasi' : 'Privacy Policy'}
+              </a>
+              <a
+                href="/terms"
+                className="transition hover:text-zinc-200"
+              >
+                {lang === 'ID' ? 'Syarat & Ketentuan' : 'Terms of Service'}
+              </a>
+              <span>&middot; v1.0 &middot; Built in Indonesia</span>
+            </div>
           </div>
         </div>
       </footer>

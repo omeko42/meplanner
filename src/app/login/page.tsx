@@ -536,16 +536,18 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <footer className="max-w-md w-full mx-auto mt-8 text-center text-[11px] text-stone-500 space-x-3">
-        <Link href="/privacy" className="hover:text-[#8B6914] hover:underline">
+      <footer className="max-w-md w-full mx-auto mt-8 pt-4 border-t border-stone-200/80 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-stone-500">
+        <span>&copy; 2026 MEPlanner</span>
+        <span>&middot;</span>
+        <Link href="/privacy" className="hover:text-stone-900 transition-colors">
           Kebijakan Privasi
         </Link>
-        <span>&bull;</span>
-        <Link href="/terms" className="hover:text-[#8B6914] hover:underline">
+        <span>&middot;</span>
+        <Link href="/terms" className="hover:text-stone-900 transition-colors">
           Syarat &amp; Ketentuan
         </Link>
-        <span>&bull;</span>
-        <Link href="/" className="hover:text-[#8B6914] hover:underline">
+        <span>&middot;</span>
+        <Link href="/" className="hover:text-stone-900 transition-colors">
           Katalog Tema
         </Link>
       </footer>
