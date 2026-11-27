@@ -564,6 +564,9 @@ export async function PUT(request: NextRequest) {
         ...(newPassword ? { passwordHash: hashPassword(newPassword) } : {}),
       });
 
+      if (panitiaUser.passwordHash) {
+        await serverStore.persistUserCredentialToVault(panitiaUser);
+      }
       const fullState = serverStore.getFullState(false);
       await saveStateToSupabase(fullState);
 
@@ -682,6 +685,9 @@ export async function PUT(request: NextRequest) {
         ...(newPassword ? { passwordHash: hashPassword(newPassword) } : {}),
       });
 
+      if (superUser.passwordHash) {
+        await serverStore.persistUserCredentialToVault(superUser);
+      }
       const fullState = serverStore.getFullState(false);
       await saveStateToSupabase(fullState);
 
@@ -783,6 +789,13 @@ export async function PUT(request: NextRequest) {
         passwordHash: hashPassword(initialPassword),
       });
 
+      await Promise.all(
+        createdUsers.map((u) =>
+          u.passwordHash
+            ? serverStore.persistUserCredentialToVault(u)
+            : Promise.resolve(false)
+        )
+      );
       const fullState = serverStore.getFullState(false);
       await saveStateToSupabase(fullState);
 
@@ -895,9 +908,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const newEmail =
+      body.newEmail !== undefined
+        ? String(body.newEmail).trim().toLowerCase()
+        : undefined;
+
     const updatedAdmin = serverStore.updateAdminUser(targetAdmin.id, {
       nama: newName,
       username: newUsername,
+      ...(newEmail ? { email: newEmail } : {}),
       ...(body.clientId ? { clientId: String(body.clientId).trim() } : {}),
       ...(body.clientName ? { clientName: String(body.clientName).trim() } : {}),
       ...(newPassword
@@ -908,6 +927,9 @@ export async function PUT(request: NextRequest) {
         : {}),
     });
 
+    if (updatedAdmin.passwordHash) {
+      await serverStore.persistUserCredentialToVault(updatedAdmin);
+    }
     const fullState = serverStore.getFullState(false);
     await saveStateToSupabase(fullState);
 

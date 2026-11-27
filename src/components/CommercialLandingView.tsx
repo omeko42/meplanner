@@ -1706,6 +1706,8 @@ interface CommercialLandingViewProps {
     coverImageUrl?: string;
     heroImageUrl?: string;
     isOAuthVerified?: boolean;
+    accessToken?: string;
+    verifiedAdminUser?: unknown;
   }) => void;
   onSelectClientInvitation: (
     clientId: string,
@@ -8519,6 +8521,9 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
               <div className="space-y-1.5">
                 <ReactGoogleLoginButton
                   lang={lang}
+                  allowAutoRegister={true}
+                  displayName={googleOnboardingEventTitle.trim() || undefined}
+                  eventType={googleOnboardingEventType}
                   buttonText={
                     lang === 'ID'
                       ? 'Masuk Otomatis dengan Google (Popup OAuth)'
@@ -8547,6 +8552,8 @@ export const CommercialLandingView: React.FC<CommercialLandingViewProps> = ({
                         coverImageUrl: selectedThemeObj.coverBgUrl,
                         heroImageUrl: selectedThemeObj.heroPrewedUrl,
                         isOAuthVerified: response.isOAuthVerified,
+                        accessToken: response.accessToken,
+                        verifiedAdminUser: response.verifiedAdminUser,
                       });
                     } else {
                       onOpenAdminPortal();

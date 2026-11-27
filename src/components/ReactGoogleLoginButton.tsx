@@ -31,6 +31,8 @@ export interface GoogleLoginResponse {
   };
   verifiedAdminUser?: unknown;
   isOAuthVerified?: boolean;
+  serverError?: string;
+  serverErrorCode?: string;
 }
 
 export interface ReactGoogleLoginProps {
@@ -44,6 +46,9 @@ export interface ReactGoogleLoginProps {
   className?: string;
   lang?: 'ID' | 'EN';
   uxMode?: 'popup' | 'redirect';
+  allowAutoRegister?: boolean;
+  displayName?: string;
+  eventType?: string;
   render?: (renderProps: {
     onClick: () => void;
     disabled?: boolean;
@@ -64,6 +69,9 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
   disabled = false,
   className = '',
   lang = 'ID',
+  allowAutoRegister = false,
+  displayName,
+  eventType,
   render,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -159,6 +167,8 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
               );
               const profile = await userInfoRes.json();
               let serverVerifiedUser: unknown = undefined;
+              let serverError: string | undefined = undefined;
+              let serverErrorCode: string | undefined = undefined;
               try {
                 const authRes = await fetch('/api/auth', {
                   method: 'POST',
@@ -167,16 +177,20 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                   body: JSON.stringify({
                     action: 'GOOGLE_OAUTH_LOGIN',
                     accessToken: tokenResponse.access_token,
+                    ...(allowAutoRegister ? { allowAutoRegister: true } : {}),
+                    ...(displayName ? { displayName } : {}),
+                    ...(eventType ? { eventType } : {}),
                   }),
                 });
-                if (authRes.ok) {
-                  const authJson = await authRes.json();
-                  if (authJson?.success && authJson?.user) {
-                    serverVerifiedUser = authJson.user;
-                  }
+                const authJson = await authRes.json().catch(() => ({}));
+                if (authRes.ok && authJson?.success && authJson?.user) {
+                  serverVerifiedUser = authJson.user;
+                } else {
+                  serverError = authJson?.error;
+                  serverErrorCode = authJson?.code;
                 }
               } catch {
-                // Continue even if session sync completes in handleLoginSuccess
+                serverError = 'Gagal menghubungi server autentikasi.';
               }
               const now = Date.now();
               const response: GoogleLoginResponse = {
@@ -203,6 +217,8 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                 },
                 verifiedAdminUser: serverVerifiedUser,
                 isOAuthVerified: true,
+                serverError,
+                serverErrorCode,
               };
               setIsLoading(false);
               onSuccess(response);

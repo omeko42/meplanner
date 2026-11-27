@@ -366,19 +366,58 @@ function getOrCreateWorkspaceForClient(
 
   const baseSettings: WeddingSettings = {
     ...INITIAL_SETTINGS,
-    siteTitle: 'My Event Planner',
+    siteTitle: 'MEPlanner — My Event Planner',
     activeClientId: clientId,
     groomFullName: groomPart,
     groomNickname: groomPart.split(' ')[0] || groomPart,
-    groomRankAndTitle: 'Putra Pertama',
+    groomRankAndTitle: 'Mempelai Pria',
     groomUnit: '',
-    groomParents: `Keluarga Besar Bapak & Ibu (${groomPart})`,
+    groomParents: `Keluarga Besar ${groomPart}`,
+    groomOrigin: '',
     brideFullName: bridePart,
     brideNickname: bridePart.split(' ')[0] || bridePart,
-    brideTitle: 'Putri Pertama',
-    brideParents: `Keluarga Besar Bapak & Ibu (${bridePart})`,
-    subtitle: `Pernikahan ${groomPart} & ${bridePart} • ${
-      grp?.eventDate || '2026-12-19'
+    brideTitle: 'Mempelai Wanita',
+    brideParents: `Keluarga Besar ${bridePart}`,
+    brideOrigin: '',
+    event1Title: 'Acara Inti / Pemberkatan',
+    event1Subtitle: 'Rangkaian Acara Utama',
+    event1DateLabel: grp?.eventDate || 'Tanggal Belum Diatur',
+    event1TimeLabel: '09.00 WIB - Selesai',
+    event1Venue: 'Lokasi Acara Belum Diatur',
+    event1Address: '',
+    event2Title: 'Resepsi / Ramah Tamah',
+    event2Subtitle: 'Silakan lengkapi detail jadwal di menu Pengaturan',
+    event2DateLabel: grp?.eventDate || 'Tanggal Belum Diatur',
+    event2TimeLabel: '11.00 WIB - Selesai',
+    event2Venue: 'Lokasi Resepsi Belum Diatur',
+    event2Address: '',
+    event3Title: '',
+    event3Subtitle: '',
+    event3DateLabel: '',
+    event3TimeLabel: '',
+    event3Venue: '',
+    event3Address: '',
+    showEvent3: false,
+    scheduleEvents: [
+      {
+        id: `ev_${rawCode}_1`,
+        badge: 'Acara Utama',
+        title: 'Acara Inti / Resepsi',
+        venue: 'Lokasi Acara Belum Diatur',
+        address: '',
+        mapsUrl: '',
+        datetime: grp?.eventDate ? `${grp.eventDate}T10:00:00+07:00` : '',
+        subtitle: 'Silakan lengkapi detail acara di menu Pengaturan',
+        dateLabel: grp?.eventDate || 'Tanggal Belum Diatur',
+        dresscode: '',
+        timeLabel: '10.00 WIB - Selesai',
+        enableCountdown: true,
+        showOnInvitation: true,
+      },
+    ],
+    loveStory: [],
+    subtitle: `${groomPart} & ${bridePart}${
+      grp?.eventDate ? ` • ${grp.eventDate}` : ''
     }`,
     updatedAt: new Date().toISOString(),
     updatedBy: 'system',
@@ -548,6 +587,10 @@ function WeddingAppContent() {
   >({});
   const isCloudHydratedRef = useRef(false);
   const cloudHydrationInFlightRef = useRef<Promise<boolean> | null>(null);
+  const [isCloudHydrated, setIsCloudHydrated] = useState(false);
+  const [cloudHydrationError, setCloudHydrationError] = useState<string | null>(
+    null
+  );
   const [isHydratingCloudAdmin, setIsHydratingCloudAdmin] = useState(false);
   const [isCheckingInitialAuth, setIsCheckingInitialAuth] = useState<boolean>(
     () =>
@@ -859,6 +902,7 @@ function WeddingAppContent() {
 
     const task = (async () => {
       setIsHydratingCloudAdmin(true);
+      setCloudHydrationError(null);
       try {
         const lsState = getInitialClientState();
         const idbState = await loadClientStateFromIndexedDB();
@@ -866,13 +910,41 @@ function WeddingAppContent() {
         const idbTime = new Date(idbState?.lastSyncedAt || 0).getTime() || 0;
         const bestLocal = idbState && idbTime >= lsTime ? idbState : lsState;
 
-        const cloudResult = await loadStateFromSupabase();
+        let cloudResult = await loadStateFromSupabase();
+        // Auto-retry transient network blips (e.g. mobile 5G handoff) before failing
+        for (
+          let attempt = 1;
+          attempt <= 2 && !cloudResult.state && !cloudResult.tableExists && !cloudResult.unauthorized;
+          attempt += 1
+        ) {
+          await new Promise((r) => setTimeout(r, attempt * 800));
+          cloudResult = await loadStateFromSupabase();
+        }
+
+        if (cloudResult.unauthorized) {
+          isCloudHydratedRef.current = false;
+          setIsCloudHydrated(false);
+          setCloudHydrationError(null);
+          setAdminUser(null);
+          saveStoredAdminUser(null);
+          saveStoredViewMode('PUBLIC');
+          setViewMode('PUBLIC');
+          setAuthModalMode('SIGN_IN');
+          setLoginErrorMsg(
+            'Sesi login Anda tidak aktif atau telah berakhir. Silakan masuk kembali.'
+          );
+          setIsLoginModalOpen(true);
+          return false;
+        }
+
         const cloudState = cloudResult.state;
 
         if (cloudState) {
           const merged = mergePreservingLocalMedia(cloudState, bestLocal);
           markInitialCloudHydrationComplete(merged);
           isCloudHydratedRef.current = true;
+          setIsCloudHydrated(true);
+          setCloudHydrationError(null);
           setState(merged);
           saveClientState(merged, false);
           if (merged.guests.length > (cloudState.guests?.length || 0)) {
@@ -884,6 +956,8 @@ function WeddingAppContent() {
         if (cloudResult.tableExists) {
           markInitialCloudHydrationComplete(null);
           isCloudHydratedRef.current = true;
+          setIsCloudHydrated(true);
+          setCloudHydrationError(null);
           setState(bestLocal);
           saveClientState(bestLocal, false);
           const isEmptySeed =
@@ -895,6 +969,9 @@ function WeddingAppContent() {
           return true;
         }
 
+        setCloudHydrationError(
+          'Gagal memuat data acara terbaru dari server. Periksa koneksi internet Anda lalu tekan Muat Ulang.'
+        );
         return false;
       } finally {
         setIsHydratingCloudAdmin(false);
@@ -1487,6 +1564,9 @@ function WeddingAppContent() {
       : user;
     setAdminUser(normalizedUser);
     saveStoredAdminUser(normalizedUser);
+    // Block AdminDashboardView render with BrandLoader until live Supabase data finishes hydrating
+    setIsHydratingCloudAdmin(true);
+    setCloudHydrationError(null);
     void fetch('/api/auth', {
       method: 'POST',
       credentials: 'include',
@@ -1553,112 +1633,109 @@ function WeddingAppContent() {
       coverImageUrl?: string;
       heroImageUrl?: string;
       isOAuthVerified?: boolean;
+      accessToken?: string;
+      verifiedAdminUser?: unknown;
     }) => {
       weddingMusicPlayer.stop();
       const rawEmail = payload.email.trim().toLowerCase();
       const email = rawEmail.includes('@') ? rawEmail : `${rawEmail}@gmail.com`;
       const localPart = email.split('@')[0] || 'planner';
 
-      const isOwnerAccount =
-        email === 'agungkrisdianto98@gmail.com' ||
-        email === 'e98.bisnis@gmail.com' ||
-        email === 'omeko42@gmail.com' ||
-        rawEmail === 'agungkrisdianto98' ||
-        rawEmail === 'omeko42' ||
-        localPart === 'agungkrisdianto98' ||
-        localPart === 'omeko42' ||
-        localPart === 'e98.bisnis';
+      // Never allow entering real Admin mode without a server-verified HttpOnly session cookie.
+      // Previously, falling through without a session created a local-only workspace seeded
+      // with demo data whose edits silently failed 401 when saving to Supabase.
+      let verifiedUser: AdminUser | null =
+        payload.verifiedAdminUser &&
+        typeof payload.verifiedAdminUser === 'object'
+          ? (payload.verifiedAdminUser as AdminUser)
+          : null;
 
-      const matchedCoSuperadmin = (state.adminUsers || []).find(
-        (u) =>
-          u.role === 'SUPERADMIN' &&
-          ((u.email && u.email.trim().toLowerCase() === email) ||
-            u.username.trim().toLowerCase() === rawEmail ||
-            u.username.trim().toLowerCase() === localPart)
-      );
-
-      if (isOwnerAccount || matchedCoSuperadmin) {
-        if (payload.isOAuthVerified) {
-          const superUser: AdminUser = matchedCoSuperadmin
-            ? {
-                ...matchedCoSuperadmin,
-                role: 'SUPERADMIN',
-                clientId: 'client-utama',
-                clientName: 'Klien Utama • Agung & Selo',
-              }
-            : {
-                id: 'superadmin-owner',
-                username: 'superadmin',
-                nama: 'Eko Agung Krisdianto',
-                role: 'SUPERADMIN',
-                jabatan: 'Superadmin',
-                email:
-                  email === 'e98.bisnis@gmail.com'
-                    ? 'e98.bisnis@gmail.com'
-                    : 'agungkrisdianto98@gmail.com',
-                isDefaultUser: true,
-                clientId: 'client-utama',
-                clientName: 'Klien Utama • Agung & Selo',
-              };
-          handleLoginSuccess(
-            superUser,
+      if (!verifiedUser && payload.accessToken) {
+        try {
+          const authRes = await fetch('/api/auth', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'GOOGLE_OAUTH_LOGIN',
+              accessToken: payload.accessToken,
+              allowAutoRegister: true,
+              displayName: payload.eventTitle?.trim() || payload.displayName?.trim() || undefined,
+              eventType: payload.eventType || 'WEDDING',
+            }),
+          });
+          const authJson = await authRes.json().catch(() => ({}));
+          if (authRes.ok && authJson?.success && authJson?.user) {
+            verifiedUser = authJson.user as AdminUser;
+          } else {
+            setIsLoginModalOpen(true);
+            setAuthModalMode('SIGN_IN');
+            setLoginIdentifier(email);
+            setLoginErrorMsg(
+              authJson?.error ||
+                (loginLang === 'EN'
+                  ? 'Google sign-in could not be verified by the server. Please try again.'
+                  : 'Verifikasi akun Google ke server gagal. Silakan coba lagi.')
+            );
+            return;
+          }
+        } catch {
+          setIsLoginModalOpen(true);
+          setAuthModalMode('SIGN_IN');
+          setLoginErrorMsg(
             loginLang === 'EN'
-              ? `Welcome back, ${superUser.nama}! Verified via Google OAuth.`
-              : `Selamat datang kembali, ${superUser.nama}! Terverifikasi via Google OAuth.`
+              ? 'Unable to reach authentication server. Please try again.'
+              : 'Gagal menghubungi server autentikasi. Silakan coba lagi.'
           );
           return;
         }
-        setIsLoginModalOpen(true);
-        setAuthModalMode('SIGN_IN');
-        setLoginIdentifier(email);
+      }
+
+      if (!verifiedUser) {
+        // No verified OAuth session yet: open the Register modal prefilled so the user
+        // completes real Google OAuth or email verification before entering Planner.
+        setGmailAddressInput(email);
+        if (payload.eventTitle) {
+          setGmailEventTitleInput(payload.eventTitle);
+        }
+        if (payload.eventType) {
+          setGmailEventTypeInput(payload.eventType);
+        }
+        setAuthModalMode('REGISTER');
         setLoginErrorMsg(
           loginLang === 'EN'
-            ? 'Superadmin / Developer account detected. Please enter your password to verify access.'
-            : 'Akun Superadmin / Developer terdeteksi. Silakan masukkan kata sandi Anda untuk verifikasi akses.'
+            ? 'Please verify your Google account or register via email verification so your workspace is safely saved to the server.'
+            : 'Silakan lanjutkan melalui tombol Daftar dengan Google atau verifikasi email agar data acara Anda tersimpan aman di server.'
+        );
+        setIsLoginModalOpen(true);
+        return;
+      }
+
+      // If this Google account is already linked to Superadmin or client-utama (e.g. primary wedding),
+      // log directly into their existing workspace without touching/overwriting its settings!
+      if (
+        isSuperadminUser(verifiedUser) ||
+        verifiedUser.clientId === 'client-utama'
+      ) {
+        handleLoginSuccess(
+          verifiedUser,
+          loginLang === 'EN'
+            ? `Welcome back, ${verifiedUser.nama}! Verified via Google.`
+            : `Selamat datang kembali, ${verifiedUser.nama}! Terverifikasi via Google.`
         );
         return;
       }
 
-      const cleanSlug =
-        email.replace(/[^a-z0-9]/g, '').slice(0, 14) || 'planner';
-      const clientId = `client-gmail-${cleanSlug}`;
-
-      const mappedTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP' =
-        payload.packageId === 'GRATIS'
-          ? 'STARTER'
-          : payload.packageId === 'PREMIUM' || payload.packageId === 'BUSINESS'
-            ? 'EXCLUSIVE'
-            : 'ROYAL VIP';
-      const groupTier: ClientGroupItem['packageTier'] =
-        mappedTier === 'ROYAL VIP' ? 'ROYAL_VIP' : mappedTier;
-      const storageQuotaMb =
-        payload.packageId === 'GRATIS'
-          ? 50
-          : payload.packageId === 'PREMIUM' || payload.packageId === 'BUSINESS'
-            ? 500
-            : 2048;
-
-      const effectiveEventType: EventCategoryType =
-        payload.eventType || 'WEDDING';
-      const dummyIdForEvent =
-        effectiveEventType === 'BIRTHDAY'
-          ? 'client-demo-birthday'
-          : effectiveEventType === 'GRADUATION'
-            ? 'client-demo-graduation'
-            : effectiveEventType === 'MEETING'
-              ? 'client-demo-meeting'
-              : effectiveEventType === 'GALA_DINNER'
-                ? 'client-demo-gala'
-                : 'client-demo-wedding';
-
-      const baseTemplate = getShowcaseDummyClientState(
-        dummyIdForEvent,
-        mappedTier,
-        payload.catalogThemeId || demoSelectedThemeId
-      );
+      const clientId = verifiedUser.clientId || `client-gmail-${email.replace(/[^a-z0-9]/g, '').slice(0, 14) || 'planner'}`;
+      const cleanSlug = clientId.replace(/^client-gmail-/i, '').slice(0, 14) || 'planner';
+      const mappedTier: 'STARTER' | 'EXCLUSIVE' | 'ROYAL VIP' = 'STARTER';
+      const groupTier: ClientGroupItem['packageTier'] = 'STARTER';
+      const storageQuotaMb = 50;
+      const effectiveEventType: EventCategoryType = payload.eventType || 'WEDDING';
 
       const formattedDisplayName =
         payload.displayName?.trim() ||
+        verifiedUser.nama ||
         localPart
           .replace(/[._-]+/g, ' ')
           .replace(/\b\w/g, (c) => c.toUpperCase())
@@ -1669,41 +1746,86 @@ function WeddingAppContent() {
       const effectiveCoupleLabel =
         cleanEventTitle ||
         (effectiveEventType === 'WEDDING'
-          ? `${formattedDisplayName} & Partner`
+          ? `${formattedDisplayName} & Pasangan`
           : formattedDisplayName);
 
-      let profileOverrides: Partial<WeddingSettings> = {};
+      let groomName = formattedDisplayName;
+      let brideName = 'Pasangan';
+      let showSecond = effectiveEventType === 'WEDDING';
       if (cleanEventTitle) {
         if (cleanEventTitle.includes('&')) {
           const parts = cleanEventTitle.split('&').map((p) => p.trim());
-          const p1 = parts[0] || formattedDisplayName;
-          const p2 = parts[1] || 'Partner';
-          profileOverrides = {
-            groomFullName: p1,
-            groomNickname: p1.split(' ')[0] || p1,
-            brideFullName: p2,
-            brideNickname: p2.split(' ')[0] || p2,
-            showSecondProfile: true,
-          };
+          groomName = parts[0] || formattedDisplayName;
+          brideName = parts[1] || 'Pasangan';
+          showSecond = true;
         } else {
-          profileOverrides = {
-            groomFullName: cleanEventTitle,
-            groomNickname: cleanEventTitle.split(' ')[0] || cleanEventTitle,
-            showSecondProfile: false,
-          };
+          groomName = cleanEventTitle;
+          showSecond = false;
         }
       }
 
+      // Hydrate latest cloud state first so we don't overwrite an already-existing workspace for this user
+      await hydrateFromCloud(true);
+
       const nowIso = new Date().toISOString();
       const customizedSettings: WeddingSettings & Record<string, unknown> = {
-        ...baseTemplate.settings,
-        ...profileOverrides,
+        ...INITIAL_SETTINGS,
         siteTitle: 'MEPlanner — My Event Planner',
         activeClientId: clientId,
         eventType: effectiveEventType,
         storageQuotaLimitMb: storageQuotaMb,
-        subscriptionPackageId: payload.packageId,
+        subscriptionPackageId: 'GRATIS',
         ownerGoogleEmail: email,
+        groomFullName: groomName,
+        groomNickname: groomName.split(' ')[0] || groomName,
+        groomRankAndTitle: 'Mempelai Pria',
+        groomUnit: '',
+        groomParents: `Keluarga Besar ${groomName}`,
+        groomOrigin: '',
+        brideFullName: brideName,
+        brideNickname: brideName.split(' ')[0] || brideName,
+        brideTitle: 'Mempelai Wanita',
+        brideParents: `Keluarga Besar ${brideName}`,
+        brideOrigin: '',
+        showSecondProfile: showSecond,
+        event1Title: 'Acara Inti / Pemberkatan',
+        event1Subtitle: 'Rangkaian Acara Utama',
+        event1DateLabel: 'Tanggal Belum Diatur',
+        event1TimeLabel: '09.00 WIB - Selesai',
+        event1Venue: 'Lokasi Acara Belum Diatur',
+        event1Address: '',
+        event2Title: 'Resepsi / Ramah Tamah',
+        event2Subtitle: 'Silakan lengkapi detail jadwal di menu Pengaturan',
+        event2DateLabel: 'Tanggal Belum Diatur',
+        event2TimeLabel: '11.00 WIB - Selesai',
+        event2Venue: 'Lokasi Resepsi Belum Diatur',
+        event2Address: '',
+        event3Title: '',
+        event3Subtitle: '',
+        event3DateLabel: '',
+        event3TimeLabel: '',
+        event3Venue: '',
+        event3Address: '',
+        showEvent3: false,
+        scheduleEvents: [
+          {
+            id: `ev_${cleanSlug}_1`,
+            badge: 'Acara Utama',
+            title: 'Acara Inti / Resepsi',
+            venue: 'Lokasi Acara Belum Diatur',
+            address: '',
+            mapsUrl: '',
+            datetime: '',
+            subtitle: 'Silakan lengkapi detail acara di menu Pengaturan',
+            dateLabel: 'Tanggal Belum Diatur',
+            dresscode: '',
+            timeLabel: '10.00 WIB - Selesai',
+            enableCountdown: true,
+            showOnInvitation: true,
+          },
+        ],
+        loveStory: [],
+        subtitle: effectiveCoupleLabel,
         selectedCatalogThemeId: payload.catalogThemeId || demoSelectedThemeId,
         selectedCatalogThemeName: payload.catalogThemeName,
         ...(payload.themePreset ? { themePreset: payload.themePreset } : {}),
@@ -1747,34 +1869,23 @@ function WeddingAppContent() {
       const newGroup: ClientGroupItem = {
         id: clientId,
         clientCode: cleanSlug.toUpperCase().slice(0, 12),
-        clientName: `Client (${payload.packageId}) • ${effectiveCoupleLabel}`,
+        clientName: `Client • ${effectiveCoupleLabel}`,
         coupleLabel: effectiveCoupleLabel,
         packageTier: groupTier,
         status: 'ACTIVE',
         eventType: effectiveEventType,
-        notes: `Google Workspace (${email}) • Paket ${payload.packageId} • Quota ${storageQuotaMb}MB`,
+        notes: `Google Workspace (${email}) • Paket GRATIS • Quota ${storageQuotaMb}MB`,
         createdAt: nowIso,
       };
 
       const nextWorkspace: ClientWorkspaceData = {
         clientId,
         settings: customizedSettings,
-        tasks: baseTemplate.tasks,
-        guests: baseTemplate.guests,
-        wishes: baseTemplate.wishes,
-        budgetItems: baseTemplate.budgetItems,
+        tasks: [],
+        guests: [],
+        wishes: [],
+        budgetItems: [],
         updatedAt: nowIso,
-      };
-
-      const sessionUser: AdminUser = {
-        id: `usr-gmail-${cleanSlug}`,
-        username: email,
-        nama: `${formattedDisplayName} (${payload.packageId})`,
-        role: 'MEMPELAI_PRIA',
-        jabatan: `Paket ${payload.packageId} • ${effectiveEventType}`,
-        email,
-        clientId,
-        clientName: newGroup.clientName,
       };
 
       let savedRootState: WeddingDatabaseSchema | null = null;
@@ -1785,53 +1896,23 @@ function WeddingAppContent() {
         const existingGroupIdx = existingGroups.findIndex(
           (g) => g.id === clientId
         );
-        if (existingGroupIdx >= 0) {
-          existingGroups[existingGroupIdx] = {
-            ...existingGroups[existingGroupIdx],
-            ...newGroup,
-          };
-        } else {
+        if (existingGroupIdx < 0) {
           existingGroups.push(newGroup);
         }
 
         const existingWorkspace = prevRoot.settings.clientWorkspaces?.[clientId];
-        const mergedWorkspace: ClientWorkspaceData =
-          existingWorkspace && !cleanEventTitle && !payload.catalogThemeId
-            ? {
-                ...existingWorkspace,
-                settings: {
-                  ...existingWorkspace.settings,
-                  subscriptionPackageId: payload.packageId,
-                  ownerGoogleEmail: email,
-                  storageQuotaLimitMb: storageQuotaMb,
-                  updatedAt: nowIso,
-                } as WeddingSettings,
-                updatedAt: nowIso,
-              }
-            : nextWorkspace;
-
-        const existingUsers = Array.isArray(prevRoot.adminUsers)
-          ? [...prevRoot.adminUsers]
-          : [];
-        const userIdx = existingUsers.findIndex(
-          (u) => u.id === sessionUser.id || u.username === email
-        );
-        if (userIdx >= 0) {
-          existingUsers[userIdx] = { ...existingUsers[userIdx], ...sessionUser };
-        } else {
-          existingUsers.push(sessionUser);
+        if (existingWorkspace) {
+          return prevRoot;
         }
 
         const nextRoot: WeddingDatabaseSchema = {
           ...prevRoot,
-          adminUsers: existingUsers,
           settings: {
             ...prevRoot.settings,
-            activeClientId: clientId,
             clientGroups: existingGroups,
             clientWorkspaces: {
               ...(prevRoot.settings.clientWorkspaces || {}),
-              [clientId]: mergedWorkspace,
+              [clientId]: nextWorkspace,
             },
             updatedAt: nowIso,
           },
@@ -1846,40 +1927,17 @@ function WeddingAppContent() {
         void saveStateToSupabase(savedRootState);
       }
 
-      setSelectedAdminWorkspaceId(clientId);
-      setAdminUser(sessionUser);
-      saveStoredAdminUser(sessionUser);
-      void fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'REGISTER_GMAIL_WORKSPACE',
-          user: sessionUser,
-        }),
-      }).catch(() => {});
-      setIsUrlGuestSessionCleared(true);
-      setPreviewOverrideGuest(null);
-      setManualGuestLookup({});
-      setDemoManagerClientId(null);
-      setPublicSelectedClientId(clientId);
-      setIsLoginModalOpen(false);
-      setLoginErrorMsg('');
-      setLoginWelcomeToast(
+      handleLoginSuccess(
+        verifiedUser,
         loginLang === 'EN'
-          ? `Workspace "${effectiveCoupleLabel}" (${payload.packageId}) created! Welcome to Management.`
-          : `Workspace "${effectiveCoupleLabel}" (Paket ${payload.packageId}) berhasil dibuat! Selamat datang di Management.`
+          ? `Workspace "${effectiveCoupleLabel}" is ready! Welcome to Planner.`
+          : `Ruang kerja "${effectiveCoupleLabel}" siap digunakan! Selamat datang di Planner.`
       );
-      if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', '/');
-      }
-      changeViewMode('ADMIN');
     },
     [
-      state.settings.groomNickname,
-      state.settings.brideNickname,
       demoSelectedThemeId,
       loginLang,
-      changeViewMode,
+      hydrateFromCloud,
     ]
   );
 
@@ -2068,14 +2126,6 @@ function WeddingAppContent() {
       setTurnstileToken('');
       setTurnstileResetKey((k) => k + 1);
 
-      // Never allow Superadmin accounts to bypass password verification
-      if (!isProtectedSuperadmin && lowerId.endsWith('@gmail.com')) {
-        setLoginIdentifier('');
-        setLoginPassword('');
-        handleGmailLoginSubmit(undefined, cleanId);
-        return;
-      }
-
       setLoginErrorMsg(
         json.error ||
           (loginLang === 'EN'
@@ -2083,12 +2133,6 @@ function WeddingAppContent() {
             : 'Email/username atau kata sandi belum sesuai.')
       );
     } catch {
-      if (!isProtectedSuperadmin && lowerId.endsWith('@gmail.com')) {
-        setLoginIdentifier('');
-        setLoginPassword('');
-        handleGmailLoginSubmit(undefined, cleanId);
-        return;
-      }
       setLoginErrorMsg(
         loginLang === 'EN'
           ? 'Unable to reach authentication server. Please check your connection or use Google Sign-In.'
@@ -2306,6 +2350,8 @@ function WeddingAppContent() {
       // Proceed with local cleanup
     }
     isCloudHydratedRef.current = false;
+    setIsCloudHydrated(false);
+    setCloudHydrationError(null);
     appendAuditLog({
       actor: actorName,
       module: 'KEAMANAN',
@@ -4213,10 +4259,39 @@ function WeddingAppContent() {
       ) : isCheckingInitialAuth ||
         (viewMode === 'ADMIN' &&
           adminUser &&
-          isHydratingCloudAdmin &&
-          !isCloudHydratedRef.current) ? (
+          (!isCloudHydrated || isHydratingCloudAdmin)) ? (
         <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4">
-          <BrandLoader size="lg" />
+          {cloudHydrationError && !isHydratingCloudAdmin ? (
+            <div className="max-w-sm w-full text-center space-y-4">
+              <BrandLoader size="md" />
+              <div className="space-y-1.5">
+                <p className="text-sm font-bold text-stone-900">
+                  Gagal Memuat Data Acara
+                </p>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  {cloudHydrationError}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => void hydrateFromCloud(true)}
+                  className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Muat Ulang Data
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleLogoutAdmin()}
+                  className="px-4 py-2.5 rounded-xl bg-white border border-stone-300 hover:bg-stone-100 text-stone-700 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Keluar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <BrandLoader size="lg" />
+          )}
         </div>
       ) : viewMode === 'ADMIN' && adminUser ? (
         <AdminDashboardView
@@ -4585,13 +4660,12 @@ function WeddingAppContent() {
                           );
                           return;
                         }
-                        void handleQuickCreateWithGoogle({
-                          email: response.profileObj.email,
-                          displayName: response.profileObj.name,
-                          packageId: 'GRATIS',
-                          catalogThemeId: demoSelectedThemeId,
-                          isOAuthVerified: response.isOAuthVerified,
-                        });
+                        setLoginErrorMsg(
+                          response.serverError ||
+                            (loginLang === 'EN'
+                              ? `Google account (${response.profileObj.email}) is not linked to any workspace yet. Sign in with your username & password, or use Free Sign Up to create a new workspace.`
+                              : `Akun Google (${response.profileObj.email}) belum terhubung ke ruang kerja mana pun. Masuk dengan username & kata sandi Anda, atau pilih tab Daftar Gratis untuk membuat ruang kerja baru.`)
+                        );
                       }}
                       onFailure={(err) => {
                         if (err.error === 'popup_blocked_by_browser') {
@@ -5073,6 +5147,9 @@ function WeddingAppContent() {
                   <div className="mt-3">
                     <ReactGoogleLoginButton
                       lang={loginLang}
+                      allowAutoRegister={true}
+                      displayName={gmailEventTitleInput.trim() || undefined}
+                      eventType={gmailEventTypeInput}
                       buttonText={
                         loginLang === 'ID'
                           ? 'Daftar Instan dengan Google'
@@ -5080,16 +5157,16 @@ function WeddingAppContent() {
                       }
                       onSuccess={(response: GoogleLoginResponse) => {
                         setLoginErrorMsg('');
-                        if (response.verifiedAdminUser) {
-                          handleLoginSuccess(
-                            response.verifiedAdminUser as AdminUser,
-                            loginLang === 'EN'
-                              ? `Signed in with Google as ${response.profileObj.name}.`
-                              : `Berhasil masuk dengan Google sebagai ${response.profileObj.name}.`
+                        const rawTitle = gmailEventTitleInput.trim();
+                        if (!response.verifiedAdminUser && !response.accessToken) {
+                          setLoginErrorMsg(
+                            response.serverError ||
+                              (loginLang === 'EN'
+                                ? 'Google registration could not be verified. Please try again.'
+                                : 'Pendaftaran dengan Google gagal diverifikasi. Silakan coba lagi.')
                           );
                           return;
                         }
-                        const rawTitle = gmailEventTitleInput.trim();
                         void handleQuickCreateWithGoogle({
                           email: response.profileObj.email,
                           displayName: rawTitle || response.profileObj.name,
@@ -5097,6 +5174,9 @@ function WeddingAppContent() {
                           eventType: gmailEventTypeInput,
                           packageId: 'GRATIS',
                           catalogThemeId: demoSelectedThemeId,
+                          isOAuthVerified: response.isOAuthVerified,
+                          accessToken: response.accessToken,
+                          verifiedAdminUser: response.verifiedAdminUser,
                         });
                       }}
                       onFailure={(err) => {

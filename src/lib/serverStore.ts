@@ -384,24 +384,125 @@ export function hashVerificationToken(rawToken: string): string {
   return crypto.createHash('sha256').update(rawToken.trim()).digest('hex');
 }
 
+interface VaultCredentialRow {
+  user_id?: string;
+  username?: string;
+  email?: string | null;
+  password_hash?: string;
+  role?: string;
+  client_id?: string | null;
+}
+
+async function fetchVaultCredentials(): Promise<VaultCredentialRow[]> {
+  const key = SUPABASE_SERVICE_ROLE_KEY;
+  if (!key || !SUPABASE_URL) return [];
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/app_user_credentials?select=user_id,username,email,password_hash,role,client_id`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      }
+    );
+    if (!res.ok) return [];
+    const rows = (await res.json().catch(() => null)) as VaultCredentialRow[] | null;
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+async function upsertVaultCredential(user: AdminUser): Promise<boolean> {
+  const key = SUPABASE_SERVICE_ROLE_KEY;
+  if (!key || !SUPABASE_URL || !user.id || !user.passwordHash) return false;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/app_user_credentials?on_conflict=user_id`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          username: (user.username || '').trim().toLowerCase(),
+          email: user.email ? user.email.trim().toLowerCase() : null,
+          password_hash: user.passwordHash,
+          role: user.role || 'PANITIA',
+          client_id: user.clientId || 'client-utama',
+          updated_at: new Date().toISOString(),
+        }),
+      }
+    );
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+function mergeVaultCredentials(
+  vaultRows: VaultCredentialRow[],
+  incoming: AdminUser[]
+): AdminUser[] {
+  if (!vaultRows.length) return incoming;
+  const byId = new Map<string, string>();
+  const byUsername = new Map<string, string>();
+  const byEmail = new Map<string, string>();
+
+  for (const row of vaultRows) {
+    if (!row?.password_hash) continue;
+    if (row.user_id) byId.set(row.user_id, row.password_hash);
+    const uname = (row.username || '').trim().toLowerCase();
+    if (uname) byUsername.set(uname, row.password_hash);
+    const em = (row.email || '').trim().toLowerCase();
+    if (em) byEmail.set(em, row.password_hash);
+  }
+
+  return incoming.map((user) => {
+    const hash =
+      byId.get(user.id) ||
+      byUsername.get((user.username || '').trim().toLowerCase()) ||
+      (user.email ? byEmail.get(user.email.trim().toLowerCase()) : undefined);
+    if (hash) {
+      return { ...user, passwordHash: hash };
+    }
+    return user;
+  });
+}
+
 export const serverStore = {
+  persistUserCredentialToVault: async (user: AdminUser): Promise<boolean> => {
+    return upsertVaultCredential(user);
+  },
+
   reconcileWithSupabase: async (): Promise<WeddingDatabaseSchema> => {
     const localStore = getStore();
     try {
       const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
       if (key && SUPABASE_URL) {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`,
-          {
-            method: 'GET',
-            headers: {
-              apikey: key,
-              Authorization: `Bearer ${key}`,
-              Accept: 'application/json',
-            },
-            cache: 'no-store',
-          }
-        );
+        const [res, vaultRows] = await Promise.all([
+          fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?id=eq.${SUPABASE_ROW_ID}&select=id,data,updated_at`,
+            {
+              method: 'GET',
+              headers: {
+                apikey: key,
+                Authorization: `Bearer ${key}`,
+                Accept: 'application/json',
+              },
+              cache: 'no-store',
+            }
+          ),
+          fetchVaultCredentials(),
+        ]);
         if (res.ok) {
           const rows = (await res.json()) as Array<{
             id?: string;
@@ -411,7 +512,12 @@ export const serverStore = {
           const row = Array.isArray(rows) ? rows[0] : undefined;
           if (row?.data) {
             const cloudState = normalizeCloudState(row.data, row.updated_at);
-            // Preserve server-held password hashes across cloud reconciliations
+            // 1. Re-attach persistent server-side password hashes from app_user_credentials vault
+            cloudState.adminUsers = mergeVaultCredentials(
+              vaultRows,
+              cloudState.adminUsers
+            );
+            // 2. Fallback to in-memory / seed hashes for any user not yet migrated into vault
             cloudState.adminUsers = preserveCredentials(
               localStore.adminUsers,
               cloudState.adminUsers
