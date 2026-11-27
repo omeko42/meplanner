@@ -36,6 +36,10 @@ import {
   type GoogleLoginResponse,
 } from '@/components/ReactGoogleLoginButton';
 import {
+  GooglePostAuthFlow,
+  type GooglePostAuthSession,
+} from '@/components/GooglePostAuthFlow';
+import {
   WeddingDatabaseSchema,
   WeddingTask,
   WeddingGuest,
@@ -567,6 +571,8 @@ function WeddingAppContent() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState('');
+  const [googlePostAuthSession, setGooglePostAuthSession] =
+    useState<GooglePostAuthSession | null>(null);
   const [isQuickDemoOpen, setIsQuickDemoOpen] = useState(false);
   const [loginWelcomeToast, setLoginWelcomeToast] = useState<string | null>(
     null
@@ -1521,6 +1527,7 @@ function WeddingAppContent() {
       setAuthModalMode('SIGN_IN');
       setShowCustomGoogleInput(false);
       setLoginErrorMsg('');
+      setGooglePostAuthSession(null);
     }
   }, [isLoginModalOpen]);
 
@@ -4454,6 +4461,21 @@ function WeddingAppContent() {
 
             {/* Unified Premium Apple-Linear Frosted Glass Auth Card */}
             <div className="max-w-[420px] w-full rounded-3xl luxe-glass-modal animate-luxe-modal p-6 sm:p-8 text-stone-800">
+              {googlePostAuthSession ? (
+                <GooglePostAuthFlow
+                  session={googlePostAuthSession}
+                  lang={loginLang}
+                  onAuthenticated={(user, msg) => {
+                    setGooglePostAuthSession(null);
+                    handleLoginSuccess(user, msg);
+                  }}
+                  onCancel={() => {
+                    setGooglePostAuthSession(null);
+                    setLoginErrorMsg('');
+                  }}
+                />
+              ) : (
+              <>
               {authModalMode !== 'GOOGLE_CHOOSER' && (
                 <div
                   className="grid grid-cols-3 gap-1 p-1 mb-6 rounded-2xl bg-stone-900/[0.06] border border-stone-900/[0.07] shadow-inner"
@@ -4660,11 +4682,37 @@ function WeddingAppContent() {
                           );
                           return;
                         }
+                        if (
+                          response.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
+                          Array.isArray(response.roleSelectionAccounts) &&
+                          response.roleSelectionAccounts.length > 0 &&
+                          response.accessToken
+                        ) {
+                          setGooglePostAuthSession({
+                            mode: 'ROLE_PICKER',
+                            accessToken: response.accessToken,
+                            email: response.profileObj.email,
+                            name: response.profileObj.name,
+                            picture: response.profileObj.imageUrl,
+                            accounts: response.roleSelectionAccounts,
+                          });
+                          return;
+                        }
+                        if (response.accessToken) {
+                          setGooglePostAuthSession({
+                            mode: 'UNREGISTERED_CHOICE',
+                            accessToken: response.accessToken,
+                            email: response.profileObj.email,
+                            name: response.profileObj.name,
+                            picture: response.profileObj.imageUrl,
+                          });
+                          return;
+                        }
                         setLoginErrorMsg(
                           response.serverError ||
                             (loginLang === 'EN'
-                              ? `Google account (${response.profileObj.email}) is not linked to any workspace yet. Sign in with your username & password, or use Free Sign Up to create a new workspace.`
-                              : `Akun Google (${response.profileObj.email}) belum terhubung ke ruang kerja mana pun. Masuk dengan username & kata sandi Anda, atau pilih tab Daftar Gratis untuk membuat ruang kerja baru.`)
+                              ? 'Google sign-in could not be verified. Please try again.'
+                              : 'Verifikasi Google gagal. Silakan coba lagi.')
                         );
                       }}
                       onFailure={(err) => {
@@ -5147,7 +5195,7 @@ function WeddingAppContent() {
                   <div className="mt-3">
                     <ReactGoogleLoginButton
                       lang={loginLang}
-                      allowAutoRegister={true}
+                      allowAutoRegister={false}
                       displayName={gmailEventTitleInput.trim() || undefined}
                       eventType={gmailEventTypeInput}
                       buttonText={
@@ -5157,27 +5205,47 @@ function WeddingAppContent() {
                       }
                       onSuccess={(response: GoogleLoginResponse) => {
                         setLoginErrorMsg('');
-                        const rawTitle = gmailEventTitleInput.trim();
-                        if (!response.verifiedAdminUser && !response.accessToken) {
-                          setLoginErrorMsg(
-                            response.serverError ||
-                              (loginLang === 'EN'
-                                ? 'Google registration could not be verified. Please try again.'
-                                : 'Pendaftaran dengan Google gagal diverifikasi. Silakan coba lagi.')
+                        if (response.verifiedAdminUser) {
+                          handleLoginSuccess(
+                            response.verifiedAdminUser as AdminUser,
+                            loginLang === 'EN'
+                              ? `Signed in with Google as ${response.profileObj.name}.`
+                              : `Berhasil masuk dengan Google sebagai ${response.profileObj.name}.`
                           );
                           return;
                         }
-                        void handleQuickCreateWithGoogle({
-                          email: response.profileObj.email,
-                          displayName: rawTitle || response.profileObj.name,
-                          eventTitle: rawTitle || undefined,
-                          eventType: gmailEventTypeInput,
-                          packageId: 'GRATIS',
-                          catalogThemeId: demoSelectedThemeId,
-                          isOAuthVerified: response.isOAuthVerified,
-                          accessToken: response.accessToken,
-                          verifiedAdminUser: response.verifiedAdminUser,
-                        });
+                        if (
+                          response.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
+                          Array.isArray(response.roleSelectionAccounts) &&
+                          response.roleSelectionAccounts.length > 0 &&
+                          response.accessToken
+                        ) {
+                          setGooglePostAuthSession({
+                            mode: 'ROLE_PICKER',
+                            accessToken: response.accessToken,
+                            email: response.profileObj.email,
+                            name: response.profileObj.name,
+                            picture: response.profileObj.imageUrl,
+                            accounts: response.roleSelectionAccounts,
+                          });
+                          return;
+                        }
+                        if (response.accessToken) {
+                          setGooglePostAuthSession({
+                            mode: 'UNREGISTERED_CHOICE',
+                            accessToken: response.accessToken,
+                            email: response.profileObj.email,
+                            name: gmailEventTitleInput.trim() || response.profileObj.name,
+                            picture: response.profileObj.imageUrl,
+                          });
+                          return;
+                        }
+                        setLoginErrorMsg(
+                          response.serverError ||
+                            (loginLang === 'EN'
+                              ? 'Google registration could not be verified. Please try again.'
+                              : 'Pendaftaran dengan Google gagal diverifikasi. Silakan coba lagi.')
+                        );
                       }}
                       onFailure={(err) => {
                         if (err.error === 'popup_blocked_by_browser') {
@@ -5188,6 +5256,8 @@ function WeddingAppContent() {
                     />
                   </div>
                 </div>
+              )}
+              </>
               )}
             </div>
           </div>

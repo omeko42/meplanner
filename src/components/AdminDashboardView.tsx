@@ -2381,6 +2381,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
   const [secUsername, setSecUsername] = useState(adminUser.username || '');
   const [secName, setSecName] = useState(adminUser.nama || '');
+  const [secEmail, setSecEmail] = useState(
+    adminUser.email &&
+      !adminUser.email.endsWith('@wedding.local') &&
+      !adminUser.email.endsWith('@meplanner.local')
+      ? adminUser.email
+      : ''
+  );
   const [secClientId, setSecClientId] = useState(
     adminUser.clientId || 'client-utama'
   );
@@ -2393,6 +2400,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   const [panitiaEditId, setPanitiaEditId] = useState<string | undefined>(undefined);
   const [panitiaUsername, setPanitiaUsername] = useState('');
   const [panitiaNama, setPanitiaNama] = useState('');
+  const [panitiaEmail, setPanitiaEmail] = useState('');
   const [panitiaJabatan, setPanitiaJabatan] = useState('Panitia / WO (Akses Non-Budgeting)');
   const [panitiaClientId, setPanitiaClientId] = useState('client-utama');
   const [panitiaPassword, setPanitiaPassword] = useState('');
@@ -4787,6 +4795,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setSelectedDefaultUserId(u.id);
     setSecUsername(u.username);
     setSecName(u.nama);
+    setSecEmail(
+      u.email &&
+        !u.email.endsWith('@wedding.local') &&
+        !u.email.endsWith('@meplanner.local')
+        ? u.email
+        : ''
+    );
     setSecClientId(u.clientId || 'client-utama');
     setSecNewPassword('');
     setSecSuperadminConfirm('');
@@ -5427,6 +5442,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           targetUserId: selectedDefaultUserId,
           newUsername: secUsername,
           newName: secName,
+          newEmail: secEmail.trim(),
           newPassword: secNewPassword,
           clientId: secClientId || 'client-utama',
           clientName:
@@ -5502,6 +5518,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           id: panitiaEditId,
           username: panitiaUsername,
           nama: panitiaNama,
+          email: panitiaEmail.trim(),
           jabatan: panitiaJabatan,
           password: panitiaPassword,
           clientId: panitiaClientId || 'client-utama',
@@ -5527,6 +5544,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       setPanitiaEditId(undefined);
       setPanitiaUsername('');
       setPanitiaNama('');
+      setPanitiaEmail('');
       setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
       setPanitiaPassword('');
       setActiveSettingsModal(null);
@@ -16773,6 +16791,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   </div>
 
                                   <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
+                                    {u.email &&
+                                    !u.email.endsWith('@wedding.local') &&
+                                    !u.email.endsWith('@meplanner.local') ? (
+                                      <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-semibold truncate max-w-[180px]">
+                                        Google: {u.email}
+                                      </span>
+                                    ) : (
+                                      <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 text-[10px] font-medium">
+                                        Belum taut Google
+                                      </span>
+                                    )}
                                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                                       Akun Inti
                                     </span>
@@ -16781,7 +16810,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                       onClick={() => handleSelectDefaultUserForEdit(u)}
                                       className="px-3 py-1.5 rounded-lg border border-[#D4AF37]/40 bg-[#FAF3E3] hover:bg-[#F3E5C8] text-[#8B6914] font-bold text-xs cursor-pointer"
                                     >
-                                      Ubah Sandi
+                                      Kelola Akun
                                     </button>
                                   </div>
                                 </div>
@@ -16812,6 +16841,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                 setPanitiaEditId(undefined);
                                 setPanitiaUsername('');
                                 setPanitiaNama('');
+                                setPanitiaEmail('');
                                 setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
                                 setPanitiaClientId(activeClientScopeId);
                                 setPanitiaPassword('');
@@ -16864,6 +16894,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   </div>
 
                                   <div className="flex items-center gap-2 self-end sm:self-center flex-wrap max-w-full">
+                                    {pu.email &&
+                                    !pu.email.endsWith('@wedding.local') &&
+                                    !pu.email.endsWith('@meplanner.local') && (
+                                      <span className="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200 text-[10px] font-semibold truncate max-w-[180px]">
+                                        Google: {pu.email}
+                                      </span>
+                                    )}
                                     <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                                       Aktif
                                     </span>
@@ -16873,6 +16910,13 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                         setPanitiaEditId(pu.id);
                                         setPanitiaUsername(pu.username);
                                         setPanitiaNama(pu.nama);
+                                        setPanitiaEmail(
+                                          pu.email &&
+                                            !pu.email.endsWith('@wedding.local') &&
+                                            !pu.email.endsWith('@meplanner.local')
+                                            ? pu.email
+                                            : ''
+                                        );
                                         setPanitiaJabatan(pu.jabatan);
                                         setPanitiaClientId(
                                           pu.clientId || activeClientScopeId
@@ -18160,6 +18204,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                       setPanitiaEditId(undefined);
                       setPanitiaUsername(`${cg.clientCode.toLowerCase()}_wo`);
                       setPanitiaNama(`Tim WO ${cg.coupleLabel}`);
+                      setPanitiaEmail('');
                       setPanitiaJabatan('Panitia / WO (Akses Non-Budgeting)');
                       setPanitiaClientId(cg.id);
                       setPanitiaPassword('');
@@ -25212,9 +25257,25 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   <div>
                     <div className="flex items-center gap-1 mb-1">
                       <label className="block font-medium text-stone-700 truncate">
+                        Email Google Tertaut (Opsional)
+                      </label>
+                      <InfoTooltip text="Isi alamat Gmail agar pemilik akun ini bisa langsung login 1 klik lewat tombol Masuk dengan Google dan otomatis masuk ke ruang kerja ini." />
+                    </div>
+                    <input
+                      type="email"
+                      value={secEmail}
+                      onChange={(e) => setSecEmail(e.target.value)}
+                      placeholder="Contoh: selo.agustina@gmail.com"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-1 mb-1">
+                      <label className="block font-medium text-stone-700 truncate">
                         Password Baru (Opsional)
                       </label>
-                      <InfoTooltip text="Kosongkan apabila Anda hanya ingin mengubah nama tampilan atau username." />
+                      <InfoTooltip text="Kosongkan apabila Anda hanya ingin mengubah nama tampilan, email Google, atau username." />
                     </div>
                     <input
                       type="password"
@@ -25225,36 +25286,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[#D4AF37]/25">
-                    <div>
-                      <label className="block font-medium text-[#8B6914] mb-1 truncate">
-                        Email Superadmin*
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        autoComplete="off"
-                        value={secSuperadminConfirm}
-                        onChange={(e) => setSecSuperadminConfirm(e.target.value)}
-                        placeholder="Email superadmin"
-                        className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
-                      />
+                  {isSuperadmin ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-3.5 py-2.5 text-xs font-medium text-emerald-800">
+                      Otorisasi Superadmin aktif — perubahan akun dan tautan Gmail langsung disimpan tanpa konfirmasi ulang.
                     </div>
-                    <div>
-                      <label className="block font-medium text-[#8B6914] mb-1 truncate">
-                        Password Superadmin*
-                      </label>
-                      <input
-                        type="password"
-                        required
-                        autoComplete="off"
-                        value={secSuperadminPassword}
-                        onChange={(e) => setSecSuperadminPassword(e.target.value)}
-                        placeholder="Password superadmin"
-                        className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
-                      />
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-[#D4AF37]/25">
+                      <div>
+                        <label className="block font-medium text-[#8B6914] mb-1 truncate">
+                          Email Superadmin*
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          autoComplete="off"
+                          value={secSuperadminConfirm}
+                          onChange={(e) => setSecSuperadminConfirm(e.target.value)}
+                          placeholder="Email superadmin"
+                          className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-[#8B6914] mb-1 truncate">
+                          Password Superadmin*
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          autoComplete="off"
+                          value={secSuperadminPassword}
+                          onChange={(e) => setSecSuperadminPassword(e.target.value)}
+                          placeholder="Password superadmin"
+                          className="w-full px-3.5 py-2 rounded-lg border border-[#D4AF37] bg-[#FAF3E3]/50 font-mono"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
                 <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">
                   <button
@@ -25366,6 +25433,22 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         className="w-full px-3.5 py-2 rounded-lg border border-stone-300 font-mono"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-1 mb-1">
+                      <label className="block font-medium text-stone-700 truncate">
+                        Email Google Tertaut (Opsional)
+                      </label>
+                      <InfoTooltip text="Isi Gmail anggota Panitia/WO agar mereka bisa langsung login 1 klik lewat Masuk dengan Google sebagai Planner/Panitia." />
+                    </div>
+                    <input
+                      type="email"
+                      value={panitiaEmail}
+                      onChange={(e) => setPanitiaEmail(e.target.value)}
+                      placeholder="Contoh: panitia.wo@gmail.com"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                    />
                   </div>
                 </div>
                 <div className="px-6 py-3.5 border-t border-[#D4AF37]/25 bg-[#FAF8F5] flex justify-end">

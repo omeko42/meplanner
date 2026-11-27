@@ -483,6 +483,159 @@ export const serverStore = {
     return upsertVaultCredential(user);
   },
 
+  persistStateToSupabaseDirect: async (): Promise<boolean> => {
+    const key = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+    if (!key || !SUPABASE_URL) return false;
+    try {
+      const store = getStore();
+      const syncTime = new Date().toISOString();
+      store.lastSyncedAt = syncTime;
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE_NAME}?on_conflict=id`,
+        {
+          method: 'POST',
+          headers: {
+            apikey: key,
+            Authorization: `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          },
+          body: JSON.stringify({
+            id: SUPABASE_ROW_ID,
+            data: stripCredentialFields(store),
+            updated_at: syncTime,
+          }),
+        }
+      );
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
+  ensureCleanClientWorkspace: (input: {
+    clientId: string;
+    clientCode: string;
+    clientName: string;
+    coupleLabel: string;
+    ownerEmail: string;
+    eventType?: WeddingSettings['eventType'];
+    accountMode?: 'CLIENT' | 'PLANNER';
+  }): void => {
+    const store = getStore();
+    const nowIso = new Date().toISOString();
+    const cleanCouple = input.coupleLabel.trim() || input.clientName;
+    const parts = cleanCouple.split('&').map((p) => p.trim());
+    const groomPart = parts[0] || cleanCouple;
+    const bridePart = parts[1] || 'Pasangan';
+    const hasSecond =
+      (input.eventType || 'WEDDING') === 'WEDDING' || parts.length > 1;
+
+    const existingGroups = Array.isArray(store.settings.clientGroups)
+      ? [...store.settings.clientGroups]
+      : [];
+    if (!existingGroups.some((g) => g.id === input.clientId)) {
+      existingGroups.push({
+        id: input.clientId,
+        clientCode: input.clientCode.toUpperCase().slice(0, 12),
+        clientName: input.clientName,
+        coupleLabel: cleanCouple,
+        packageTier: 'STARTER',
+        status: 'ACTIVE',
+        eventType: input.eventType || 'WEDDING',
+        notes: `${
+          input.accountMode === 'PLANNER' ? 'Event Planner / WO' : 'Klien Acara'
+        } (${input.ownerEmail}) • Paket GRATIS`,
+        createdAt: nowIso,
+      });
+    }
+
+    const existingWorkspaces = { ...(store.settings.clientWorkspaces || {}) };
+    if (!existingWorkspaces[input.clientId]) {
+      const cleanSettings: WeddingSettings = {
+        ...INITIAL_SETTINGS,
+        siteTitle: 'MEPlanner — My Event Planner',
+        activeClientId: input.clientId,
+        eventType: input.eventType || 'WEDDING',
+        storageQuotaLimitMb: 50,
+        subscriptionPackageId: 'GRATIS',
+        ownerGoogleEmail: input.ownerEmail,
+        groomFullName: groomPart,
+        groomNickname: groomPart.split(' ')[0] || groomPart,
+        groomRankAndTitle:
+          input.accountMode === 'PLANNER' ? 'Penyelenggara / WO' : 'Mempelai Pria',
+        groomUnit: '',
+        groomParents: `Keluarga Besar ${groomPart}`,
+        groomOrigin: '',
+        brideFullName: bridePart,
+        brideNickname: bridePart.split(' ')[0] || bridePart,
+        brideTitle: 'Mempelai Wanita',
+        brideParents: `Keluarga Besar ${bridePart}`,
+        brideOrigin: '',
+        showSecondProfile: hasSecond,
+        event1Title: 'Acara Inti / Pemberkatan',
+        event1Subtitle: 'Rangkaian Acara Utama',
+        event1DateLabel: 'Tanggal Belum Diatur',
+        event1TimeLabel: '09.00 WIB - Selesai',
+        event1Venue: 'Lokasi Acara Belum Diatur',
+        event1Address: '',
+        event2Title: 'Resepsi / Ramah Tamah',
+        event2Subtitle: 'Silakan lengkapi detail jadwal di menu Pengaturan',
+        event2DateLabel: 'Tanggal Belum Diatur',
+        event2TimeLabel: '11.00 WIB - Selesai',
+        event2Venue: 'Lokasi Resepsi Belum Diatur',
+        event2Address: '',
+        event3Title: '',
+        event3Subtitle: '',
+        event3DateLabel: '',
+        event3TimeLabel: '',
+        event3Venue: '',
+        event3Address: '',
+        showEvent3: false,
+        scheduleEvents: [
+          {
+            id: `ev_${input.clientCode.toLowerCase()}_1`,
+            badge: 'Acara Utama',
+            title: 'Acara Inti / Resepsi',
+            venue: 'Lokasi Acara Belum Diatur',
+            address: '',
+            mapsUrl: '',
+            datetime: '',
+            subtitle: 'Silakan lengkapi detail acara di menu Pengaturan',
+            dateLabel: 'Tanggal Belum Diatur',
+            dresscode: '',
+            timeLabel: '10.00 WIB - Selesai',
+            enableCountdown: true,
+            showOnInvitation: true,
+          },
+        ],
+        loveStory: [],
+        subtitle: cleanCouple,
+        updatedAt: nowIso,
+        updatedBy: input.ownerEmail,
+      };
+      delete cleanSettings.clientWorkspaces;
+
+      existingWorkspaces[input.clientId] = {
+        clientId: input.clientId,
+        settings: cleanSettings,
+        tasks: [],
+        guests: [],
+        wishes: [],
+        budgetItems: [],
+        updatedAt: nowIso,
+      };
+    }
+
+    store.settings = {
+      ...store.settings,
+      clientGroups: existingGroups,
+      clientWorkspaces: existingWorkspaces,
+      updatedAt: nowIso,
+    };
+    persistStore(store, true, false);
+  },
+
   reconcileWithSupabase: async (): Promise<WeddingDatabaseSchema> => {
     const localStore = getStore();
     try {
@@ -584,6 +737,7 @@ export const serverStore = {
     id?: string;
     username: string;
     nama: string;
+    email?: string;
     jabatan?: string;
     clientId?: string;
     clientName?: string;
@@ -591,6 +745,8 @@ export const serverStore = {
   }): AdminUser => {
     const store = getStore();
     const cleanUsername = input.username.trim().toLowerCase();
+    const cleanEmail =
+      input.email !== undefined ? input.email.trim().toLowerCase() : undefined;
     const existingIdx = input.id
       ? store.adminUsers.findIndex((u) => u.id === input.id)
       : store.adminUsers.findIndex(
@@ -604,6 +760,10 @@ export const serverStore = {
         username: cleanUsername,
         nama: input.nama.trim(),
         jabatan: input.jabatan || prev.jabatan || 'Panitia Operasional',
+        email:
+          cleanEmail !== undefined
+            ? cleanEmail || `${cleanUsername}@wedding.local`
+            : prev.email || `${cleanUsername}@wedding.local`,
         clientId: input.clientId || prev.clientId || 'client-utama',
         clientName: input.clientName || prev.clientName || 'Client Utama • Eko & Selo',
         ...(input.passwordHash ? { passwordHash: input.passwordHash, password: '' } : {}),
@@ -619,7 +779,7 @@ export const serverStore = {
       nama: input.nama.trim(),
       role: 'PANITIA',
       jabatan: input.jabatan || 'Panitia / WO (Akses Non-Budgeting)',
-      email: `${cleanUsername}@wedding.local`,
+      email: cleanEmail || `${cleanUsername}@wedding.local`,
       isDefaultUser: false,
       clientId: input.clientId || 'client-utama',
       clientName: input.clientName || 'Client Utama • Eko & Selo',

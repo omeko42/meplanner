@@ -15,6 +15,17 @@ export interface GoogleProfileObj {
   familyName: string;
 }
 
+export interface GoogleSelectableAccount {
+  id: string;
+  username: string;
+  nama: string;
+  role: string;
+  jabatan?: string;
+  clientId: string;
+  clientName: string;
+  accountKind: 'SUPERADMIN' | 'PLANNER' | 'CLIENT';
+}
+
 export interface GoogleLoginResponse {
   googleId: string;
   tokenId: string;
@@ -33,6 +44,7 @@ export interface GoogleLoginResponse {
   isOAuthVerified?: boolean;
   serverError?: string;
   serverErrorCode?: string;
+  roleSelectionAccounts?: GoogleSelectableAccount[];
 }
 
 export interface ReactGoogleLoginProps {
@@ -169,6 +181,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
               let serverVerifiedUser: unknown = undefined;
               let serverError: string | undefined = undefined;
               let serverErrorCode: string | undefined = undefined;
+              let roleSelectionAccounts: GoogleSelectableAccount[] | undefined = undefined;
               try {
                 const authRes = await fetch('/api/auth', {
                   method: 'POST',
@@ -188,6 +201,12 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                 } else {
                   serverError = authJson?.error;
                   serverErrorCode = authJson?.code;
+                  if (
+                    authJson?.code === 'ROLE_SELECTION_REQUIRED' &&
+                    Array.isArray(authJson?.accounts)
+                  ) {
+                    roleSelectionAccounts = authJson.accounts as GoogleSelectableAccount[];
+                  }
                 }
               } catch {
                 serverError = 'Gagal menghubungi server autentikasi.';
@@ -219,6 +238,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                 isOAuthVerified: true,
                 serverError,
                 serverErrorCode,
+                roleSelectionAccounts,
               };
               setIsLoading(false);
               onSuccess(response);

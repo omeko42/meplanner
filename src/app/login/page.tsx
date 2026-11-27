@@ -18,7 +18,14 @@ import {
   UserPlus,
 } from 'lucide-react';
 import TurnstileWidget from '@/components/TurnstileWidget';
-import { ReactGoogleLoginButton } from '@/components/ReactGoogleLoginButton';
+import {
+  ReactGoogleLoginButton,
+  type GoogleSelectableAccount,
+} from '@/components/ReactGoogleLoginButton';
+import {
+  GooglePostAuthFlow,
+  type GooglePostAuthSession,
+} from '@/components/GooglePostAuthFlow';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { TURNSTILE_PUBLIC_SITE_KEY } from '@/lib/turnstileClient';
 
@@ -45,12 +52,15 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [googlePostAuth, setGooglePostAuth] =
+    useState<GooglePostAuthSession | null>(null);
 
   const switchMode = (next: AuthMode) => {
     setMode(next);
     setErrorMsg(null);
     setErrorCode(null);
     setSuccessMsg(null);
+    setGooglePostAuth(null);
     setTurnstileToken('');
     setTurnstileResetKey((k) => k + 1);
   };
@@ -218,6 +228,23 @@ export default function LoginPage() {
           </div>
 
           <div className="p-6 space-y-5">
+            {googlePostAuth ? (
+              <GooglePostAuthFlow
+                session={googlePostAuth}
+                lang="ID"
+                onAuthenticated={(_user, msg) => {
+                  setGooglePostAuth(null);
+                  setSuccessMsg(msg || 'Berhasil masuk! Membuka ruang kerja...');
+                  router.replace('/?mode=admin');
+                  router.refresh();
+                }}
+                onCancel={() => {
+                  setGooglePostAuth(null);
+                  setErrorMsg(null);
+                }}
+              />
+            ) : (
+            <>
             {errorMsg && (
               <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold space-y-2">
                 <p>{errorMsg}</p>
@@ -410,6 +437,37 @@ export default function LoginPage() {
                   setErrorMsg('Token Google tidak diterima.');
                   return;
                 }
+                if (googleRes.verifiedAdminUser) {
+                  setSuccessMsg('Autentikasi Google terverifikasi! Mengarahkan...');
+                  router.replace('/?mode=admin');
+                  router.refresh();
+                  return;
+                }
+                if (
+                  googleRes.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
+                  Array.isArray(googleRes.roleSelectionAccounts) &&
+                  googleRes.roleSelectionAccounts.length > 0
+                ) {
+                  setGooglePostAuth({
+                    mode: 'ROLE_PICKER',
+                    accessToken: googleRes.accessToken,
+                    email: googleRes.profileObj?.email || '',
+                    name: googleRes.profileObj?.name || '',
+                    picture: googleRes.profileObj?.imageUrl || '',
+                    accounts: googleRes.roleSelectionAccounts,
+                  });
+                  return;
+                }
+                if (googleRes.serverErrorCode === 'ACCOUNT_NOT_REGISTERED') {
+                  setGooglePostAuth({
+                    mode: 'UNREGISTERED_CHOICE',
+                    accessToken: googleRes.accessToken,
+                    email: googleRes.profileObj?.email || '',
+                    name: googleRes.profileObj?.name || '',
+                    picture: googleRes.profileObj?.imageUrl || '',
+                  });
+                  return;
+                }
                 setIsSubmitting(true);
                 try {
                   const res = await fetch('/api/auth', {
@@ -419,20 +477,44 @@ export default function LoginPage() {
                     body: JSON.stringify({
                       action: 'GOOGLE_OAUTH_LOGIN',
                       accessToken: googleRes.accessToken,
-                      allowAutoRegister: mode === 'REGISTER',
-                      displayName: regName.trim() || googleRes.profileObj?.name || undefined,
-                      eventType: regEventType,
+                      allowAutoRegister: false,
                     }),
                   });
                   const data = await res.json().catch(() => ({}));
-                  if (!res.ok || !data?.success) {
-                    setErrorMsg(data?.error || 'Gagal masuk menggunakan Google OAuth.');
-                    setErrorCode(data?.code || null);
+                  if (res.ok && data?.success) {
+                    setSuccessMsg('Autentikasi Google terverifikasi! Mengarahkan...');
+                    router.replace('/?mode=admin');
+                    router.refresh();
                     return;
                   }
-                  setSuccessMsg('Autentikasi Google terverifikasi! Mengarahkan...');
-                  router.replace('/?mode=admin');
-                  router.refresh();
+                  if (
+                    data?.code === 'ROLE_SELECTION_REQUIRED' &&
+                    Array.isArray(data?.accounts)
+                  ) {
+                    setGooglePostAuth({
+                      mode: 'ROLE_PICKER',
+                      accessToken: googleRes.accessToken,
+                      email: data?.googleProfile?.email || googleRes.profileObj?.email || '',
+                      name: data?.googleProfile?.name || googleRes.profileObj?.name || '',
+                      picture:
+                        data?.googleProfile?.picture || googleRes.profileObj?.imageUrl || '',
+                      accounts: data.accounts as GoogleSelectableAccount[],
+                    });
+                    return;
+                  }
+                  if (data?.code === 'ACCOUNT_NOT_REGISTERED') {
+                    setGooglePostAuth({
+                      mode: 'UNREGISTERED_CHOICE',
+                      accessToken: googleRes.accessToken,
+                      email: data?.googleProfile?.email || googleRes.profileObj?.email || '',
+                      name: data?.googleProfile?.name || googleRes.profileObj?.name || '',
+                      picture:
+                        data?.googleProfile?.picture || googleRes.profileObj?.imageUrl || '',
+                    });
+                    return;
+                  }
+                  setErrorMsg(data?.error || 'Gagal masuk menggunakan Google OAuth.');
+                  setErrorCode(data?.code || null);
                 } catch {
                   setErrorMsg('Gagal memverifikasi sesi Google ke server.');
                 } finally {
@@ -448,6 +530,8 @@ export default function LoginPage() {
               <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
               <span>Sesi Anda aman dan terenkripsi</span>
             </div>
+            </>
+            )}
           </div>
         </div>
       </div>

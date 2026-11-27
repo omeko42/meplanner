@@ -16,8 +16,8 @@ import {
   verifySuperadminPassword,
 } from '@/lib/auth';
 import { serverStore, setPendingRegistration } from '@/lib/serverStore';
-import { saveStateToSupabase } from '@/lib/supabaseCloud';
 import { apiError, rateLimitByIp } from '@/lib/apiGuard';
+import type { AdminUser, EventCategoryType } from '@/types';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { buildVerificationEmail, sendEmail } from '@/lib/email';
 import { SITE_URL, resolveClientIp } from '@/lib/env';
@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
       const accessToken = String(body.accessToken).trim();
       let verifiedEmail = '';
       let verifiedGoogleName = '';
+      let verifiedPicture = '';
 
       try {
         const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -98,6 +99,7 @@ export async function POST(request: NextRequest) {
           if (gData?.email && gData?.email_verified !== false) {
             verifiedEmail = String(gData.email).trim().toLowerCase();
             verifiedGoogleName = String(gData.name || gData.given_name || '').trim();
+            verifiedPicture = String(gData.picture || '').trim();
           }
         }
       } catch {
@@ -111,27 +113,120 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      const classifyAccountKind = (
+        u: Pick<AdminUser, 'role' | 'jabatan'>
+      ): 'SUPERADMIN' | 'PLANNER' | 'CLIENT' => {
+        if (u.role === 'SUPERADMIN') return 'SUPERADMIN';
+        const jab = (u.jabatan || '').toLowerCase();
+        if (
+          u.role === 'PANITIA' ||
+          jab.includes('planner') ||
+          jab.includes('panitia') ||
+          jab.includes('wo')
+        ) {
+          return 'PLANNER';
+        }
+        return 'CLIENT';
+      };
+
       const dbAdmins = serverStore.getAdminUsers();
-      let matchedAdmin = dbAdmins.find(
+      const matchedAdmins = dbAdmins.filter(
         (u) =>
           (u.email && u.email.trim().toLowerCase() === verifiedEmail) ||
           u.username.trim().toLowerCase() === verifiedEmail
       );
 
       const isOwnerSuperadmin = verifySuperadminIdentity(verifiedEmail);
+      const requestedClientId = String(body.clientId || 'client-utama').trim();
+      const requestedClientName = String(
+        body.clientName ||
+          (requestedClientId === 'client-demo'
+            ? 'Klien Demo • Rayhan & Clarissa'
+            : 'Klien Utama • Agung & Selo')
+      ).trim();
+
+      // Build unified list of authorized accounts for this verified Google email
+      const candidateAccounts: AdminUser[] = [];
+      if (isOwnerSuperadmin) {
+        candidateAccounts.push({
+          id: 'superadmin-owner',
+          username: 'superadmin',
+          nama: 'Eko Agung Krisdianto',
+          role: 'SUPERADMIN',
+          jabatan: 'Superadmin • Semua Ruang Kerja',
+          email: verifiedEmail,
+          isDefaultUser: true,
+          clientId: requestedClientId,
+          clientName: requestedClientName,
+        });
+      }
+      for (const acc of matchedAdmins) {
+        if (acc.id === 'superadmin-owner') continue;
+        if (!candidateAccounts.some((c) => c.id === acc.id)) {
+          candidateAccounts.push(acc);
+        }
+      }
+
+      const selectedAccountId = String(body.selectedAccountId || '').trim();
+      let chosenAccount: AdminUser | undefined;
+
+      if (candidateAccounts.length > 1) {
+        if (!selectedAccountId) {
+          return NextResponse.json(
+            {
+              success: false,
+              code: 'ROLE_SELECTION_REQUIRED',
+              googleProfile: {
+                email: verifiedEmail,
+                name: verifiedGoogleName || verifiedEmail.split('@')[0],
+                picture: verifiedPicture,
+              },
+              accounts: candidateAccounts.map((u) => ({
+                id: u.id,
+                username: u.username,
+                nama: u.nama,
+                role: u.role,
+                jabatan: u.jabatan,
+                clientId: u.clientId || 'client-utama',
+                clientName: u.clientName || 'Klien Utama • Agung & Selo',
+                accountKind: classifyAccountKind(u),
+              })),
+            },
+            { status: 200 }
+          );
+        }
+        chosenAccount = candidateAccounts.find((c) => c.id === selectedAccountId);
+        if (!chosenAccount) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Akun pilihan tidak cocok dengan email Google yang terverifikasi.',
+              code: 'ACCOUNT_MISMATCH',
+            },
+            { status: 403 }
+          );
+        }
+      } else if (candidateAccounts.length === 1) {
+        chosenAccount = candidateAccounts[0];
+      }
 
       // An unknown Google account only receives a strictly isolated FREE
       // workspace when explicitly signing up (`allowAutoRegister: true`) after
       // Google has server-side verified the email address. Never escalates to
       // SUPERADMIN or grants access to `client-utama`.
-      if (!isOwnerSuperadmin && !matchedAdmin) {
+      if (!chosenAccount) {
         if (!body.allowAutoRegister) {
           return NextResponse.json(
             {
               success: false,
               error:
-                'Akun ini belum terdaftar. Silakan daftar gratis terlebih dahulu atau hubungi admin.',
+                'Email Google ini belum tertaut ke ruang kerja mana pun. Pilih Tautkan Akun Klien atau Buat Ruang Kerja Baru.',
               code: 'ACCOUNT_NOT_REGISTERED',
+              googleProfile: {
+                email: verifiedEmail,
+                name: verifiedGoogleName || verifiedEmail.split('@')[0],
+                picture: verifiedPicture,
+              },
             },
             { status: 403 }
           );
@@ -143,79 +238,204 @@ export async function POST(request: NextRequest) {
           String(body.displayName || '').trim() ||
           verifiedGoogleName ||
           verifiedEmail.split('@')[0];
-        const eventType = String(body.eventType || 'WEDDING').trim();
+        const rawEventType = String(body.eventType || 'WEDDING').trim().toUpperCase();
+        const eventType: EventCategoryType = (
+          ['WEDDING', 'BIRTHDAY', 'GRADUATION', 'MEETING', 'GALA_DINNER'].includes(
+            rawEventType
+          )
+            ? rawEventType
+            : 'WEDDING'
+        ) as EventCategoryType;
+        const accountMode: 'CLIENT' | 'PLANNER' =
+          String(body.accountMode || '').trim().toUpperCase() === 'PLANNER'
+            ? 'PLANNER'
+            : 'CLIENT';
 
-        matchedAdmin = serverStore.updateAdminUser(`usr-gmail-${slug}`, {
+        const clientDisplayLabel =
+          accountMode === 'PLANNER'
+            ? `Planner / WO • ${displayName}`
+            : `Klien • ${displayName}`;
+
+        chosenAccount = serverStore.updateAdminUser(`usr-gmail-${slug}`, {
           id: `usr-gmail-${slug}`,
           username: verifiedEmail,
           nama: displayName,
           role: 'MEMPELAI_PRIA',
-          jabatan: `Paket GRATIS • ${eventType}`,
+          jabatan:
+            accountMode === 'PLANNER'
+              ? `Event Planner / WO • Paket GRATIS (${eventType})`
+              : `Pemilik Acara (Klien) • Paket GRATIS (${eventType})`,
           email: verifiedEmail,
           isDefaultUser: true,
           clientId: newClientId,
-          clientName: `Client • ${displayName}`,
+          clientName: clientDisplayLabel,
         });
-        await saveStateToSupabase(serverStore.getFullState()).catch(() => null);
+
+        serverStore.ensureCleanClientWorkspace({
+          clientId: newClientId,
+          clientCode: slug.toUpperCase(),
+          clientName: clientDisplayLabel,
+          coupleLabel: displayName,
+          ownerEmail: verifiedEmail,
+          eventType,
+          accountMode,
+        });
+
+        await serverStore.persistStateToSupabaseDirect();
       }
 
-      const requestedClientId = String(body.clientId || 'client-utama').trim();
-      const requestedClientName = String(
-        body.clientName ||
-          (requestedClientId === 'client-demo'
-            ? 'Klien Demo • Rayhan & Clarissa'
-            : 'Klien Utama • Agung & Selo')
-      ).trim();
-
-      const resolvedClientId = isOwnerSuperadmin
-        ? requestedClientId
-        : matchedAdmin!.clientId || 'client-utama';
-      const resolvedClientName = isOwnerSuperadmin
-        ? requestedClientName
-        : matchedAdmin!.clientName || 'Klien Utama • Agung & Selo';
+      const resolvedClientId = chosenAccount.clientId || 'client-utama';
+      const resolvedClientName =
+        chosenAccount.clientName || 'Klien Utama • Agung & Selo';
       const resolvedTenantId = await ensureDefaultTenant(
         resolvedClientId,
         resolvedClientName
       );
 
-      const sessionUser: SessionUser = isOwnerSuperadmin
-        ? {
-            id: 'superadmin-owner',
-            username: 'superadmin',
-            nama: 'Eko Agung Krisdianto',
-            role: 'SUPERADMIN' as const,
-            jabatan: 'Superadmin',
-            email: verifiedEmail,
-            isDefaultUser: true,
-            clientId: resolvedClientId,
-            clientName: resolvedClientName,
-            ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
-          }
-        : {
-            id: matchedAdmin!.id,
-            username: matchedAdmin!.username,
-            nama: matchedAdmin!.nama,
-            role: matchedAdmin!.role,
-            jabatan: matchedAdmin!.jabatan,
-            email: matchedAdmin!.email || verifiedEmail,
-            isDefaultUser: Boolean(matchedAdmin!.isDefaultUser),
-            clientId: resolvedClientId,
-            clientName: resolvedClientName,
-            ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
-          };
+      const sessionUser: SessionUser = {
+        id: chosenAccount.id,
+        username: chosenAccount.username,
+        nama: chosenAccount.nama,
+        role: chosenAccount.role,
+        jabatan: chosenAccount.jabatan,
+        email: chosenAccount.email || verifiedEmail,
+        isDefaultUser: Boolean(chosenAccount.isDefaultUser),
+        clientId: resolvedClientId,
+        clientName: resolvedClientName,
+        ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
+      };
 
       const token = createSessionToken(sessionUser);
       const response = NextResponse.json({
         success: true,
         user: sessionUser,
       });
-      response.cookies.set(SESSION_COOKIE_NAME, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: SESSION_TTL_SECONDS,
+      setSessionCookie(response, token);
+      return response;
+    }
+
+    if (action === 'LINK_GOOGLE_ACCOUNT' && body.accessToken) {
+      const accessToken = String(body.accessToken).trim();
+      const identifier = String(
+        body.identifier || body.username || ''
+      ).trim();
+      const password = String(body.password || '');
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        'local-client';
+      const rateKey = `link:${ip}:${identifier.toLowerCase()}`;
+
+      const rateStatus = checkRateLimit(rateKey);
+      if (!rateStatus.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Terlalu banyak percobaan tautkan akun gagal. Coba lagi dalam ${rateStatus.retryAfterSeconds} detik.`,
+          },
+          { status: 429 }
+        );
+      }
+
+      if (!identifier || !password) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Username dan kata sandi akun klien wajib diisi untuk menautkan Google.',
+          },
+          { status: 400 }
+        );
+      }
+
+      let verifiedEmail = '';
+      try {
+        const gRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: 'no-store',
+        });
+        if (gRes.ok) {
+          const gData = await gRes.json();
+          if (gData?.email && gData?.email_verified !== false) {
+            verifiedEmail = String(gData.email).trim().toLowerCase();
+          }
+        }
+      } catch {
+        // Ignore
+      }
+
+      if (!verifiedEmail) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Sesi Google telah kedaluwarsa. Silakan klik Masuk dengan Google ulang.',
+          },
+          { status: 401 }
+        );
+      }
+
+      const authenticatedUser = authenticateAdminCredentials(identifier, password);
+      if (!authenticatedUser) {
+        recordFailedAttempt(rateKey);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Username atau kata sandi akun tidak sesuai.',
+          },
+          { status: 401 }
+        );
+      }
+
+      if (
+        authenticatedUser.id === 'superadmin-owner' ||
+        authenticatedUser.role === 'SUPERADMIN'
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Akun Superadmin dilindungi dan tidak dapat ditautkan melalui alur ini.',
+          },
+          { status: 403 }
+        );
+      }
+
+      clearFailedAttempts(rateKey);
+
+      const updatedAdmin = serverStore.updateAdminUser(authenticatedUser.id, {
+        email: verifiedEmail,
       });
+      if (updatedAdmin.passwordHash) {
+        await serverStore.persistUserCredentialToVault(updatedAdmin);
+      }
+      await serverStore.persistStateToSupabaseDirect();
+
+      const resolvedClientId = updatedAdmin.clientId || 'client-utama';
+      const resolvedClientName =
+        updatedAdmin.clientName || 'Klien Utama • Agung & Selo';
+      const resolvedTenantId = await ensureDefaultTenant(
+        resolvedClientId,
+        resolvedClientName
+      );
+
+      const sessionUser: SessionUser = {
+        id: updatedAdmin.id,
+        username: updatedAdmin.username,
+        nama: updatedAdmin.nama,
+        role: updatedAdmin.role,
+        jabatan: updatedAdmin.jabatan,
+        email: verifiedEmail,
+        isDefaultUser: Boolean(updatedAdmin.isDefaultUser),
+        clientId: resolvedClientId,
+        clientName: resolvedClientName,
+        ...(resolvedTenantId ? { tenantId: resolvedTenantId } : {}),
+      };
+
+      const token = createSessionToken(sessionUser);
+      const response = NextResponse.json({
+        success: true,
+        user: sessionUser,
+        linkedEmail: verifiedEmail,
+        message: `Akun Google ${verifiedEmail} berhasil ditautkan ke @${updatedAdmin.username}!`,
+      });
+      setSessionCookie(response, token);
       return response;
     }
 
@@ -518,6 +738,10 @@ export async function PUT(request: NextRequest) {
       const id = body.id ? String(body.id).trim() : undefined;
       const username = String(body.username || '').trim().toLowerCase();
       const nama = String(body.nama || '').trim();
+      const email =
+        body.email !== undefined
+          ? String(body.email).trim().toLowerCase()
+          : undefined;
       const jabatan = String(body.jabatan || 'Panitia / WO').trim();
       const clientId = String(body.clientId || 'client-utama').trim();
       const clientName = String(body.clientName || 'Client Utama • Eko & Selo').trim();
@@ -526,6 +750,13 @@ export async function PUT(request: NextRequest) {
       if (!username || !nama) {
         return NextResponse.json(
           { success: false, error: 'Username dan Nama Panitia wajib diisi.' },
+          { status: 400 }
+        );
+      }
+
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json(
+          { success: false, error: 'Format email Google tertaut tidak valid.' },
           { status: 400 }
         );
       }
@@ -558,6 +789,7 @@ export async function PUT(request: NextRequest) {
         id,
         username,
         nama,
+        ...(email !== undefined ? { email } : {}),
         jabatan,
         clientId,
         clientName,
@@ -567,8 +799,8 @@ export async function PUT(request: NextRequest) {
       if (panitiaUser.passwordHash) {
         await serverStore.persistUserCredentialToVault(panitiaUser);
       }
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
 
       return NextResponse.json({
         success: true,
@@ -579,6 +811,7 @@ export async function PUT(request: NextRequest) {
           id: panitiaUser.id,
           username: panitiaUser.username,
           nama: panitiaUser.nama,
+          email: panitiaUser.email,
           role: panitiaUser.role,
           jabatan: panitiaUser.jabatan,
           clientId: panitiaUser.clientId,
@@ -608,8 +841,8 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
       return NextResponse.json({
         success: true,
         message: 'Akun Panitia berhasil dihapus.',
@@ -688,8 +921,8 @@ export async function PUT(request: NextRequest) {
       if (superUser.passwordHash) {
         await serverStore.persistUserCredentialToVault(superUser);
       }
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
 
       return NextResponse.json({
         success: true,
@@ -729,8 +962,8 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
       return NextResponse.json({
         success: true,
         message: 'Akun Co-Superadmin berhasil dihapus.',
@@ -796,8 +1029,8 @@ export async function PUT(request: NextRequest) {
             : Promise.resolve(false)
         )
       );
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
 
       return NextResponse.json({
         success: true,
@@ -826,8 +1059,8 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
+      await serverStore.persistStateToSupabaseDirect();
       const fullState = serverStore.getFullState(false);
-      await saveStateToSupabase(fullState);
       return NextResponse.json({
         success: true,
         message: 'Grup Client beserta seluruh akun di dalamnya berhasil dihapus bersih.',
@@ -913,10 +1146,19 @@ export async function PUT(request: NextRequest) {
         ? String(body.newEmail).trim().toLowerCase()
         : undefined;
 
+    if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      return NextResponse.json(
+        { success: false, error: 'Format email Google tertaut tidak valid.' },
+        { status: 400 }
+      );
+    }
+
     const updatedAdmin = serverStore.updateAdminUser(targetAdmin.id, {
       nama: newName,
       username: newUsername,
-      ...(newEmail ? { email: newEmail } : {}),
+      ...(newEmail !== undefined
+        ? { email: newEmail || `${newUsername}@wedding.local` }
+        : {}),
       ...(body.clientId ? { clientId: String(body.clientId).trim() } : {}),
       ...(body.clientName ? { clientName: String(body.clientName).trim() } : {}),
       ...(newPassword
@@ -930,8 +1172,8 @@ export async function PUT(request: NextRequest) {
     if (updatedAdmin.passwordHash) {
       await serverStore.persistUserCredentialToVault(updatedAdmin);
     }
+    await serverStore.persistStateToSupabaseDirect();
     const fullState = serverStore.getFullState(false);
-    await saveStateToSupabase(fullState);
 
     const isSelfUpdate =
       targetAdmin.id === sessionUser.id ||
