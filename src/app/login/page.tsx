@@ -444,27 +444,19 @@ export default function LoginPage() {
                   return;
                 }
                 if (
-                  googleRes.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
-                  Array.isArray(googleRes.roleSelectionAccounts) &&
-                  googleRes.roleSelectionAccounts.length > 0
+                  (googleRes.serverErrorCode === 'ENTRY_HUB_REQUIRED' ||
+                    googleRes.serverErrorCode === 'ROLE_SELECTION_REQUIRED' ||
+                    googleRes.serverErrorCode === 'ACCOUNT_NOT_REGISTERED') &&
+                  googleRes.accessToken
                 ) {
                   setGooglePostAuth({
-                    mode: 'ROLE_PICKER',
+                    mode: 'ENTRY_HUB',
                     accessToken: googleRes.accessToken,
                     email: googleRes.profileObj?.email || '',
                     name: googleRes.profileObj?.name || '',
                     picture: googleRes.profileObj?.imageUrl || '',
-                    accounts: googleRes.roleSelectionAccounts,
-                  });
-                  return;
-                }
-                if (googleRes.serverErrorCode === 'ACCOUNT_NOT_REGISTERED') {
-                  setGooglePostAuth({
-                    mode: 'UNREGISTERED_CHOICE',
-                    accessToken: googleRes.accessToken,
-                    email: googleRes.profileObj?.email || '',
-                    name: googleRes.profileObj?.name || '',
-                    picture: googleRes.profileObj?.imageUrl || '',
+                    accounts: googleRes.roleSelectionAccounts || [],
+                    invitations: googleRes.invitationOptions || [],
                   });
                   return;
                 }
@@ -477,6 +469,7 @@ export default function LoginPage() {
                     body: JSON.stringify({
                       action: 'GOOGLE_OAUTH_LOGIN',
                       accessToken: googleRes.accessToken,
+                      promptChoice: true,
                       allowAutoRegister: false,
                     }),
                   });
@@ -488,28 +481,23 @@ export default function LoginPage() {
                     return;
                   }
                   if (
-                    data?.code === 'ROLE_SELECTION_REQUIRED' &&
-                    Array.isArray(data?.accounts)
+                    data?.code === 'ENTRY_HUB_REQUIRED' ||
+                    data?.code === 'ROLE_SELECTION_REQUIRED' ||
+                    data?.code === 'ACCOUNT_NOT_REGISTERED'
                   ) {
                     setGooglePostAuth({
-                      mode: 'ROLE_PICKER',
+                      mode: 'ENTRY_HUB',
                       accessToken: googleRes.accessToken,
                       email: data?.googleProfile?.email || googleRes.profileObj?.email || '',
                       name: data?.googleProfile?.name || googleRes.profileObj?.name || '',
                       picture:
                         data?.googleProfile?.picture || googleRes.profileObj?.imageUrl || '',
-                      accounts: data.accounts as GoogleSelectableAccount[],
-                    });
-                    return;
-                  }
-                  if (data?.code === 'ACCOUNT_NOT_REGISTERED') {
-                    setGooglePostAuth({
-                      mode: 'UNREGISTERED_CHOICE',
-                      accessToken: googleRes.accessToken,
-                      email: data?.googleProfile?.email || googleRes.profileObj?.email || '',
-                      name: data?.googleProfile?.name || googleRes.profileObj?.name || '',
-                      picture:
-                        data?.googleProfile?.picture || googleRes.profileObj?.imageUrl || '',
+                      accounts: Array.isArray(data?.accounts)
+                        ? (data.accounts as GoogleSelectableAccount[])
+                        : [],
+                      invitations: Array.isArray(data?.invitations)
+                        ? data.invitations
+                        : [],
                     });
                     return;
                   }

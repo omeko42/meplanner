@@ -68,6 +68,8 @@ import {
   SkipForward,
   ListMusic,
   QrCode,
+  ArrowUpRight,
+  Mail,
 } from 'lucide-react';
 import { WeddingRingsIcon } from '@/components/WeddingRingsIcon';
 import { InfoTooltip } from '@/components/InfoTooltip';
@@ -86,6 +88,12 @@ import {
   exportGuestsToPdf,
 } from '@/lib/exportReports';
 import { resolvePackageCapabilities } from '@/lib/packageCatalog';
+import {
+  cleanMojibake,
+  extractCustomSubRole,
+  formatHumanAccountRole,
+  formatPackageTierLabel,
+} from '@/lib/humanLabels';
 import {
   WeddingDatabaseSchema,
   WeddingTask,
@@ -2381,6 +2389,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
   );
   const [secUsername, setSecUsername] = useState(adminUser.username || '');
   const [secName, setSecName] = useState(adminUser.nama || '');
+  const [secJabatan, setSecJabatan] = useState(extractCustomSubRole(adminUser));
   const [secEmail, setSecEmail] = useState(
     adminUser.email &&
       !adminUser.email.endsWith('@wedding.local') &&
@@ -4795,6 +4804,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
     setSelectedDefaultUserId(u.id);
     setSecUsername(u.username);
     setSecName(u.nama);
+    setSecJabatan(extractCustomSubRole(u));
     setSecEmail(
       u.email &&
         !u.email.endsWith('@wedding.local') &&
@@ -5442,6 +5452,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
           targetUserId: selectedDefaultUserId,
           newUsername: secUsername,
           newName: secName,
+          newJabatan: secJabatan.trim(),
           newEmail: secEmail.trim(),
           newPassword: secNewPassword,
           clientId: secClientId || 'client-utama',
@@ -16743,14 +16754,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                   {activeWorkspaceGroup.clientCode}
                                 </span>
                                 <p className="font-extrabold text-stone-900 text-xs sm:text-sm truncate">
-                                  {(activeWorkspaceGroup.clientName || '').replace(/â€¢/g, '•')}
+                                  {cleanMojibake(activeWorkspaceGroup.clientName)}
                                 </p>
                                 <span className="px-2 py-0.5 rounded-full bg-[#FAF3E3] text-[#8B6914] border border-[#D4AF37]/40 text-[10px] font-bold">
-                                  {activeWorkspaceGroup.packageTier}
+                                  {formatPackageTierLabel(activeWorkspaceGroup.packageTier)}
                                 </span>
                               </div>
                               <p className="text-[11px] text-stone-500 mt-0.5">
-                                {activeWorkspaceDefaultUsers.length} Akun Inti (Mempelai &amp; Orang Tua)
+                                {activeWorkspaceDefaultUsers.length} Akun Inti (Mempelai &amp; Keluarga)
                               </p>
                             </div>
                           </div>
@@ -16777,15 +16788,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           (@{u.username})
                                         </span>
                                       </p>
-                                      <p className="text-[11px] text-stone-500 truncate">
-                                        {(u.jabatan || '').replace(/â€¢/g, '•')} &bull;{' '}
-                                        <span className="text-[#8B6914] font-semibold">
-                                          {(
-                                            activeWorkspaceGroup.coupleLabel ||
-                                            activeWorkspaceGroup.clientName ||
-                                            ''
-                                          ).replace(/â€¢/g, '•')}
-                                        </span>
+                                      <p className="text-[11px] text-stone-600 truncate">
+                                        {formatHumanAccountRole(
+                                          u,
+                                          activeWorkspaceGroup.coupleLabel ||
+                                            activeWorkspaceGroup.clientName
+                                        )}
                                       </p>
                                     </div>
                                   </div>
@@ -16876,18 +16884,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                                           (@{pu.username})
                                         </span>
                                       </p>
-                                      <p className="text-[11px] text-stone-500">
-                                        {(pu.jabatan || '').replace(/â€¢/g, '•')} &bull;{' '}
-                                        <span className="text-[#8B6914] font-semibold">
-                                          {(
-                                            pu.clientName ||
-                                            activeWorkspaceGroup?.clientName ||
-                                            'Client Utama • Eko & Selo'
-                                          ).replace(/â€¢/g, '•')}
-                                        </span>{' '}
-                                        &bull;{' '}
-                                        <span className="text-rose-600 font-semibold">
-                                          Non-Moneter
+                                      <p className="text-[11px] text-stone-600 truncate">
+                                        {formatHumanAccountRole(
+                                          pu,
+                                          activeWorkspaceGroup?.coupleLabel ||
+                                            pu.clientName
+                                        )}{' '}
+                                        &middot;{' '}
+                                        <span className="text-stone-400 font-medium">
+                                          Tanpa Akses Anggaran
                                         </span>
                                       </p>
                                     </div>
@@ -22190,77 +22195,202 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
       </main>
 
       {/* ===================================================================
-          CLEAN EXECUTIVE WORKSPACE FOOTER (STASHINME-ALIGNED)
+          EXECUTIVE MULTI-COLUMN WORKSPACE FOOTER (STASHINME ARCHITECTURE)
          =================================================================== */}
-      <footer className="mt-auto w-full bg-[#FAF8F5] border-t border-stone-200/80 pt-6 pb-20 sm:py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px] text-stone-500">
-          <div className="flex items-center gap-2.5">
-            <WeddingRingsIcon
-              className="w-6 h-6 shrink-0"
-              logoUrl={
-                (settingsForm as any).brandLogoUrl ||
-                (state.settings as any).brandLogoUrl
-              }
-            />
-            <span className="font-semibold text-stone-800">
-              ME<span className="text-[#8B6914]">Planner</span>
-            </span>
-            <span className="text-stone-300">&middot;</span>
-            <span>&copy; 2026 All rights reserved.</span>
+      <footer className="mt-auto w-full border-t border-white/[0.08] bg-[#080C10] text-zinc-300 pt-10 pb-24 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-12">
+            {/* Brand */}
+            <div className="space-y-3 lg:col-span-5">
+              <div className="flex items-center gap-2.5">
+                <WeddingRingsIcon
+                  className="w-8 h-8 shrink-0"
+                  logoUrl={
+                    (settingsForm as any).brandLogoUrl ||
+                    (state.settings as any).brandLogoUrl
+                  }
+                />
+                <span className="text-[15px] font-bold tracking-tight text-white">
+                  ME<span className="text-[#D4AF37]">Planner</span>
+                </span>
+              </div>
+              <p className="max-w-xs text-[12px] leading-relaxed text-zinc-400">
+                Undangan digital eksklusif, buku tamu &amp; RSVP, broadcast WhatsApp, dan perencana acara dalam satu ruang kerja.
+              </p>
+              <a
+                href={`mailto:${
+                  (
+                    settingsForm.contactBusinessEmail ??
+                    state.settings.contactBusinessEmail
+                  )?.trim() || 'e98.bisnis@gmail.com'
+                }`}
+                className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#D4AF37] transition hover:text-[#E8CB6B]"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>
+                  {(
+                    settingsForm.contactBusinessEmail ??
+                    state.settings.contactBusinessEmail
+                  )?.trim() || 'e98.bisnis@gmail.com'}
+                </span>
+              </a>
+            </div>
+
+            {/* Ruang Kerja */}
+            <div className="space-y-2.5 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Ruang Kerja
+              </p>
+              <ul className="space-y-2 text-[13px] text-zinc-400">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('readiness')}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    Ringkasan
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('guests')}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    Daftar Tamu
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('settings')}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    Pengaturan
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onSwitchToPublicPreview()}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    Lihat Undangan
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kolaborasi */}
+            <div className="space-y-2.5 lg:col-span-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Kolaborasi
+              </p>
+              <ul className="space-y-2 text-[13px] text-zinc-400">
+                <li>
+                  <a
+                    href={(() => {
+                      const raw = (
+                        settingsForm.developerCreditUrl ??
+                        state.settings.developerCreditUrl
+                      )?.trim();
+                      return !raw || /github\.com\/omeko11/i.test(raw)
+                        ? 'https://github.com/omeko42/meplanner'
+                        : raw;
+                    })()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>Contribute (GitHub)</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`mailto:${
+                      (
+                        settingsForm.contactBusinessEmail ??
+                        state.settings.contactBusinessEmail
+                      )?.trim() || 'e98.bisnis@gmail.com'
+                    }?subject=Partnership%20MEPlanner`}
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>Become a Partner</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://github.com/omeko42/meplanner/issues"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="transition hover:text-white"
+                  >
+                    Laporkan Bug &amp; Masukan
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kontak */}
+            <div className="space-y-2.5 lg:col-span-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                Kontak
+              </p>
+              <ul className="space-y-2 text-[12px] text-zinc-400">
+                <li>
+                  <a
+                    href={`mailto:${
+                      (
+                        settingsForm.contactBusinessEmail ??
+                        state.settings.contactBusinessEmail
+                      )?.trim() || 'e98.bisnis@gmail.com'
+                    }`}
+                    className="transition hover:text-white"
+                  >
+                    {(
+                      settingsForm.contactBusinessEmail ??
+                      state.settings.contactBusinessEmail
+                    )?.trim() || 'e98.bisnis@gmail.com'}
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://www.linkedin.com/in/omeko42"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 transition hover:text-white"
+                  >
+                    <span>LinkedIn (omeko42)</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => onOpenLandingPage?.()}
+                    className="transition hover:text-white cursor-pointer"
+                  >
+                    Katalog Tema
+                  </button>
+                </li>
+                <li className="text-zinc-500">Indonesia &middot; WIB</li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
-            <a
-              href={`mailto:${
-                (
-                  settingsForm.contactBusinessEmail ??
-                  state.settings.contactBusinessEmail
-                )?.trim() || 'e98.bisnis@gmail.com'
-              }`}
-              className="font-medium text-stone-600 hover:text-stone-950 transition-colors"
-            >
-              {(
-                settingsForm.contactBusinessEmail ??
-                state.settings.contactBusinessEmail
-              )?.trim() || 'e98.bisnis@gmail.com'}
-            </a>
-            <a
-              href={(() => {
-                const raw = (
-                  settingsForm.developerCreditUrl ??
-                  state.settings.developerCreditUrl
-                )?.trim();
-                return !raw || /github\.com\/omeko11/i.test(raw)
-                  ? 'https://github.com/omeko42/meplanner'
-                  : raw;
-              })()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-stone-950 transition-colors"
-            >
-              GitHub
-            </a>
-            <a
-              href="https://www.linkedin.com/in/omeko42"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-stone-950 transition-colors"
-            >
-              LinkedIn
-            </a>
-            <a
-              href="/privacy"
-              className="hover:text-stone-950 transition-colors"
-            >
-              Kebijakan Privasi
-            </a>
-            <a
-              href="/terms"
-              className="hover:text-stone-950 transition-colors"
-            >
-              Syarat &amp; Ketentuan
-            </a>
-            <span className="text-stone-400">v1.0 &middot; Built in Indonesia</span>
+          <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.06] pt-6 text-[12px] text-zinc-500 sm:flex-row">
+            <span>&copy; 2026 MEPlanner. All rights reserved.</span>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <a href="/privacy" className="transition hover:text-zinc-200">
+                Kebijakan Privasi
+              </a>
+              <a href="/terms" className="transition hover:text-zinc-200">
+                Syarat &amp; Ketentuan
+              </a>
+              <span>&middot; v1.0 &middot; Built in Indonesia</span>
+            </div>
           </div>
         </div>
       </footer>
@@ -25173,7 +25303,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                   {/* Pilih Akun Utama */}
                   <div className="p-4 rounded-xl bg-[#FAF8F5] border border-[#D4AF37]/30 space-y-2">
                     <p className="font-bold text-xs text-stone-800">
-                      Pilih Akun Inti (User Default):
+                      Pilih Akun Inti Keluarga:
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {defaultSystemUsers
@@ -25235,6 +25365,45 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({
                         onChange={(e) => setSecName(e.target.value)}
                         className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
                       />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-1 mb-1">
+                      <label className="block font-medium text-stone-700 truncate">
+                        Peran / Sub-Peran dalam Acara
+                      </label>
+                      <InfoTooltip text="Label peran yang tampil di daftar akun dan saat login Google (contoh: Mempelai Pria, Orang Tua, Koordinator Acara, EO)." />
+                    </div>
+                    <input
+                      type="text"
+                      value={secJabatan}
+                      onChange={(e) => setSecJabatan(e.target.value)}
+                      placeholder="Contoh: Mempelai Pria / Orang Tua / Koordinator"
+                      className="w-full px-3.5 py-2 rounded-lg border border-stone-300"
+                    />
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {[
+                        'Mempelai Pria',
+                        'Mempelai Wanita',
+                        'Keluarga Mempelai Pria',
+                        'Keluarga Mempelai Wanita',
+                        'Koordinator Acara',
+                        'Event Organizer (EO)',
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setSecJabatan(preset)}
+                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors cursor-pointer ${
+                            secJabatan === preset
+                              ? 'bg-stone-900 text-white border-stone-900'
+                              : 'bg-[#FAF8F5] text-stone-700 border-stone-200 hover:border-[#C5A059]'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
                     </div>
                   </div>
 

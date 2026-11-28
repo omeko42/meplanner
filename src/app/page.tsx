@@ -4469,6 +4469,31 @@ function WeddingAppContent() {
                     setGooglePostAuthSession(null);
                     handleLoginSuccess(user, msg);
                   }}
+                  onOpenInvitation={(target) => {
+                    setGooglePostAuthSession(null);
+                    setIsLoginModalOpen(false);
+                    if (target.accessCode) {
+                      const matched = resolveExactKeyAcrossWorkspaces(target.accessCode);
+                      if (matched) {
+                        setPublicSelectedClientId(matched.clientId);
+                        setManualGuestLookup({
+                          to: matched.guest.guestName,
+                          code: matched.hashToken,
+                        });
+                        changeViewMode('PUBLIC');
+                        return;
+                      }
+                      if (typeof window !== 'undefined') {
+                        window.location.href = `/${encodeURIComponent(target.accessCode)}`;
+                      }
+                      return;
+                    }
+                    if (target.clientId) {
+                      setPublicSelectedClientId(target.clientId);
+                      setManualGuestLookup({});
+                      changeViewMode('PUBLIC');
+                    }
+                  }}
                   onCancel={() => {
                     setGooglePostAuthSession(null);
                     setLoginErrorMsg('');
@@ -4682,29 +4707,15 @@ function WeddingAppContent() {
                           );
                           return;
                         }
-                        if (
-                          response.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
-                          Array.isArray(response.roleSelectionAccounts) &&
-                          response.roleSelectionAccounts.length > 0 &&
-                          response.accessToken
-                        ) {
-                          setGooglePostAuthSession({
-                            mode: 'ROLE_PICKER',
-                            accessToken: response.accessToken,
-                            email: response.profileObj.email,
-                            name: response.profileObj.name,
-                            picture: response.profileObj.imageUrl,
-                            accounts: response.roleSelectionAccounts,
-                          });
-                          return;
-                        }
                         if (response.accessToken) {
                           setGooglePostAuthSession({
-                            mode: 'UNREGISTERED_CHOICE',
+                            mode: 'ENTRY_HUB',
                             accessToken: response.accessToken,
                             email: response.profileObj.email,
                             name: response.profileObj.name,
                             picture: response.profileObj.imageUrl,
+                            accounts: response.roleSelectionAccounts || [],
+                            invitations: response.invitationOptions || [],
                           });
                           return;
                         }
@@ -5214,29 +5225,15 @@ function WeddingAppContent() {
                           );
                           return;
                         }
-                        if (
-                          response.serverErrorCode === 'ROLE_SELECTION_REQUIRED' &&
-                          Array.isArray(response.roleSelectionAccounts) &&
-                          response.roleSelectionAccounts.length > 0 &&
-                          response.accessToken
-                        ) {
-                          setGooglePostAuthSession({
-                            mode: 'ROLE_PICKER',
-                            accessToken: response.accessToken,
-                            email: response.profileObj.email,
-                            name: response.profileObj.name,
-                            picture: response.profileObj.imageUrl,
-                            accounts: response.roleSelectionAccounts,
-                          });
-                          return;
-                        }
                         if (response.accessToken) {
                           setGooglePostAuthSession({
-                            mode: 'UNREGISTERED_CHOICE',
+                            mode: 'ENTRY_HUB',
                             accessToken: response.accessToken,
                             email: response.profileObj.email,
                             name: gmailEventTitleInput.trim() || response.profileObj.name,
                             picture: response.profileObj.imageUrl,
+                            accounts: response.roleSelectionAccounts || [],
+                            invitations: response.invitationOptions || [],
                           });
                           return;
                         }

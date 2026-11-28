@@ -25,6 +25,11 @@ import {
   setSessionCookie,
 } from '@/lib/authSession';
 import {
+  extractCleanEventLabel,
+  extractCustomSubRole,
+  formatHumanAccountRole,
+} from '@/lib/humanLabels';
+import {
   ensureDefaultTenant,
   findWorkspaceSlugForUser,
 } from '@/lib/tenantResolver';
@@ -129,6 +134,27 @@ export async function POST(request: NextRequest) {
             : 'Klien Utama • Agung & Selo')
       ).trim();
 
+      const fullStoreState = serverStore.getFullState(false);
+      const clientGroups = Array.isArray(fullStoreState.settings?.clientGroups)
+        ? fullStoreState.settings.clientGroups
+        : [];
+      const resolveEventLabelForClient = (
+        cid: string,
+        fallbackClientName?: string
+      ): string => {
+        if (cid === 'client-utama') {
+          const g = fullStoreState.settings?.groomNickname || 'Agung';
+          const b = fullStoreState.settings?.brideNickname || 'Selo';
+          return `${g} & ${b}`;
+        }
+        if (cid === 'client-demo') {
+          return 'Rayhan & Clarissa (Demo)';
+        }
+        const matched = clientGroups.find((grp) => grp.id === cid);
+        if (matched?.coupleLabel) return extractCleanEventLabel(matched.coupleLabel);
+        return extractCleanEventLabel(fallbackClientName, cid);
+      };
+
       // Build unified list of authorized accounts for this verified Google email
       const candidateAccounts: AdminUser[] = [];
       if (isOwnerSuperadmin) {
@@ -137,7 +163,7 @@ export async function POST(request: NextRequest) {
           username: 'superadmin',
           nama: 'Eko Agung Krisdianto',
           role: 'SUPERADMIN',
-          jabatan: 'Superadmin • Semua Ruang Kerja',
+          jabatan: 'Superadmin • Kelola Semua Ruang Kerja',
           email: verifiedEmail,
           isDefaultUser: true,
           clientId: requestedClientId,
@@ -151,34 +177,84 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Build list of invitations the user can preview/check directly
+      const accessibleInvitationsMap = new Map<
+        string,
+        { clientId: string; eventLabel: string; subtitle: string; urlPath: string }
+      >();
+      const addInvitationOption = (cid: string, fallbackName?: string) => {
+        if (!cid || accessibleInvitationsMap.has(cid)) return;
+        const label = resolveEventLabelForClient(cid, fallbackName);
+        accessibleInvitationsMap.set(cid, {
+          clientId: cid,
+          eventLabel: label,
+          subtitle:
+            cid === 'client-demo'
+              ? 'Pratinjau Undangan Demo'
+              : cid === 'client-utama'
+                ? 'Undangan Utama'
+                : 'Undangan Klien',
+          urlPath: `/?client=${encodeURIComponent(cid)}`,
+        });
+      };
+
+      if (isOwnerSuperadmin) {
+        addInvitationOption('client-utama');
+        for (const grp of clientGroups) {
+          if (grp?.id) addInvitationOption(grp.id, grp.coupleLabel || grp.clientName);
+        }
+        addInvitationOption('client-demo');
+      } else {
+        for (const acc of candidateAccounts) {
+          if (acc.clientId) addInvitationOption(acc.clientId, acc.clientName);
+        }
+      }
+
       const selectedAccountId = String(body.selectedAccountId || '').trim();
+      const promptChoice = Boolean(body.promptChoice);
       let chosenAccount: AdminUser | undefined;
 
-      if (candidateAccounts.length > 1) {
-        if (!selectedAccountId) {
-          return NextResponse.json(
-            {
-              success: false,
-              code: 'ROLE_SELECTION_REQUIRED',
-              googleProfile: {
-                email: verifiedEmail,
-                name: verifiedGoogleName || verifiedEmail.split('@')[0],
-                picture: verifiedPicture,
-              },
-              accounts: candidateAccounts.map((u) => ({
+      // Always pause on the Post-Google Entry Hub when `promptChoice` is requested
+      // (or when multiple accounts match) so the user explicitly chooses:
+      // 1) Check/view an invitation only, 2) Enter as Client/Family/EO/Committee in a specific event,
+      // 3) Link another registered account, or 4) Create a brand-new event/studio workspace.
+      if (
+        !selectedAccountId &&
+        !body.allowAutoRegister &&
+        (promptChoice || candidateAccounts.length > 1)
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            code: 'ENTRY_HUB_REQUIRED',
+            googleProfile: {
+              email: verifiedEmail,
+              name: verifiedGoogleName || verifiedEmail.split('@')[0],
+              picture: verifiedPicture,
+            },
+            accounts: candidateAccounts.map((u) => {
+              const cid = u.clientId || 'client-utama';
+              const eventLabel = resolveEventLabelForClient(cid, u.clientName);
+              const subRole = extractCustomSubRole(u);
+              return {
                 id: u.id,
                 username: u.username,
                 nama: u.nama,
                 role: u.role,
-                jabatan: u.jabatan,
-                clientId: u.clientId || 'client-utama',
-                clientName: u.clientName || 'Klien Utama • Agung & Selo',
+                jabatan: subRole,
+                clientId: cid,
+                clientName: eventLabel,
+                humanLabel: formatHumanAccountRole(u, eventLabel),
                 accountKind: classifyAccountKind(u),
-              })),
-            },
-            { status: 200 }
-          );
-        }
+              };
+            }),
+            invitations: Array.from(accessibleInvitationsMap.values()),
+          },
+          { status: 200 }
+        );
+      }
+
+      if (selectedAccountId) {
         chosenAccount = candidateAccounts.find((c) => c.id === selectedAccountId);
         if (!chosenAccount) {
           return NextResponse.json(
@@ -189,6 +265,18 @@ export async function POST(request: NextRequest) {
             },
             { status: 403 }
           );
+        }
+        if (
+          chosenAccount.role === 'SUPERADMIN' &&
+          body.selectedClientId &&
+          typeof body.selectedClientId === 'string'
+        ) {
+          const nextCid = body.selectedClientId.trim();
+          chosenAccount = {
+            ...chosenAccount,
+            clientId: nextCid,
+            clientName: resolveEventLabelForClient(nextCid),
+          };
         }
       } else if (candidateAccounts.length === 1) {
         chosenAccount = candidateAccounts[0];
@@ -1123,6 +1211,10 @@ export async function PUT(request: NextRequest) {
       body.newEmail !== undefined
         ? String(body.newEmail).trim().toLowerCase()
         : undefined;
+    const newJabatan =
+      body.newJabatan !== undefined
+        ? String(body.newJabatan).trim()
+        : undefined;
 
     if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
       return NextResponse.json(
@@ -1134,6 +1226,7 @@ export async function PUT(request: NextRequest) {
     const updatedAdmin = serverStore.updateAdminUser(targetAdmin.id, {
       nama: newName,
       username: newUsername,
+      ...(newJabatan ? { jabatan: newJabatan } : {}),
       ...(newEmail !== undefined
         ? { email: newEmail || `${newUsername}@wedding.local` }
         : {}),

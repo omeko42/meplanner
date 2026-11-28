@@ -23,7 +23,15 @@ export interface GoogleSelectableAccount {
   jabatan?: string;
   clientId: string;
   clientName: string;
+  humanLabel?: string;
   accountKind: 'SUPERADMIN' | 'PLANNER' | 'CLIENT';
+}
+
+export interface GoogleInvitationOption {
+  clientId: string;
+  eventLabel: string;
+  subtitle?: string;
+  urlPath: string;
 }
 
 export interface GoogleLoginResponse {
@@ -45,6 +53,7 @@ export interface GoogleLoginResponse {
   serverError?: string;
   serverErrorCode?: string;
   roleSelectionAccounts?: GoogleSelectableAccount[];
+  invitationOptions?: GoogleInvitationOption[];
 }
 
 export interface ReactGoogleLoginProps {
@@ -182,6 +191,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
               let serverError: string | undefined = undefined;
               let serverErrorCode: string | undefined = undefined;
               let roleSelectionAccounts: GoogleSelectableAccount[] | undefined = undefined;
+              let invitationOptions: GoogleInvitationOption[] | undefined = undefined;
               try {
                 const authRes = await fetch('/api/auth', {
                   method: 'POST',
@@ -190,6 +200,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                   body: JSON.stringify({
                     action: 'GOOGLE_OAUTH_LOGIN',
                     accessToken: tokenResponse.access_token,
+                    promptChoice: !allowAutoRegister,
                     ...(allowAutoRegister ? { allowAutoRegister: true } : {}),
                     ...(displayName ? { displayName } : {}),
                     ...(eventType ? { eventType } : {}),
@@ -202,10 +213,14 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                   serverError = authJson?.error;
                   serverErrorCode = authJson?.code;
                   if (
-                    authJson?.code === 'ROLE_SELECTION_REQUIRED' &&
+                    (authJson?.code === 'ENTRY_HUB_REQUIRED' ||
+                      authJson?.code === 'ROLE_SELECTION_REQUIRED') &&
                     Array.isArray(authJson?.accounts)
                   ) {
                     roleSelectionAccounts = authJson.accounts as GoogleSelectableAccount[];
+                  }
+                  if (Array.isArray(authJson?.invitations)) {
+                    invitationOptions = authJson.invitations as GoogleInvitationOption[];
                   }
                 }
               } catch {
@@ -239,6 +254,7 @@ export const ReactGoogleLoginButton: React.FC<ReactGoogleLoginProps> = ({
                 serverError,
                 serverErrorCode,
                 roleSelectionAccounts,
+                invitationOptions,
               };
               setIsLoading(false);
               onSuccess(response);
