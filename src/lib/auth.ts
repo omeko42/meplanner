@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 import { AdminUser } from '@/types';
 import { serverStore } from '@/lib/serverStore';
+import { readSessionToken } from '@/lib/authSession';
 import {
   AUTH_SECRET,
   SUPERADMIN_EMAILS,
@@ -330,7 +331,7 @@ export interface SessionUser extends AdminUser {
 }
 
 export function verifyAdminRequest(request: NextRequest): SessionUser | null {
-  const cookieToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const cookieToken = readSessionToken(request);
   if (cookieToken) {
     const verified = verifySessionToken(cookieToken);
     if (verified) return verified;

@@ -47,6 +47,15 @@ export function clearSessionCookie(response: NextResponse): NextResponse {
     path: '/',
     maxAge: 0,
   });
+  if (ACTIVE_SESSION_COOKIE_NAME !== SESSION_COOKIE_NAME) {
+    response.cookies.set(SESSION_COOKIE_NAME, '', {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: isProduction,
+      path: '/',
+      maxAge: 0,
+    });
+  }
   return response;
 }
 

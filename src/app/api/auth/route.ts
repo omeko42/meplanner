@@ -8,8 +8,6 @@ import {
   hashPassword,
   isPrivilegedDefaultOrSuperUser,
   recordFailedAttempt,
-  SESSION_COOKIE_NAME,
-  SESSION_TTL_SECONDS,
   type SessionUser,
   verifyAdminRequest,
   verifySuperadminIdentity,
@@ -21,7 +19,11 @@ import type { AdminUser, EventCategoryType } from '@/types';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { buildVerificationEmail, sendEmail } from '@/lib/email';
 import { SITE_URL, resolveClientIp } from '@/lib/env';
-import { setSessionCookie } from '@/lib/authSession';
+import {
+  clearSessionCookie,
+  readSessionToken,
+  setSessionCookie,
+} from '@/lib/authSession';
 import {
   ensureDefaultTenant,
   findWorkspaceSlugForUser,
@@ -36,14 +38,8 @@ export async function GET(request: NextRequest) {
       { authenticated: false, user: null },
       { status: 401 }
     );
-    if (request.cookies.get(SESSION_COOKIE_NAME)?.value) {
-      response.cookies.set(SESSION_COOKIE_NAME, '', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 0,
-      });
+    if (readSessionToken(request)) {
+      clearSessionCookie(response);
     }
     return response;
   }
@@ -52,13 +48,7 @@ export async function GET(request: NextRequest) {
     authenticated: true,
     user,
   });
-  response.cookies.set(SESSION_COOKIE_NAME, renewedToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: SESSION_TTL_SECONDS,
-  });
+  setSessionCookie(response, renewedToken);
   return response;
 }
 
@@ -73,13 +63,7 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Berhasil keluar dari sesi Admin.',
       });
-      response.cookies.set(SESSION_COOKIE_NAME, '', {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: 0,
-      });
+      clearSessionCookie(response);
       return response;
     }
 
@@ -469,13 +453,7 @@ export async function POST(request: NextRequest) {
         success: true,
         user: updatedSessionUser,
       });
-      response.cookies.set(SESSION_COOKIE_NAME, token, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: SESSION_TTL_SECONDS,
-      });
+      setSessionCookie(response, token);
       return response;
     }
 
@@ -1202,13 +1180,7 @@ export async function PUT(request: NextRequest) {
 
     if (isSelfUpdate) {
       const refreshedToken = createSessionToken(updatedAdmin);
-      response.cookies.set(SESSION_COOKIE_NAME, refreshedToken, {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-        maxAge: SESSION_TTL_SECONDS,
-      });
+      setSessionCookie(response, refreshedToken);
     }
 
     return response;
